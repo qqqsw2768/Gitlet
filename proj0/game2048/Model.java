@@ -3,9 +3,10 @@ package game2048;
 import java.util.Formatter;
 import java.util.Observable;
 
+import java.util.HashSet;
 
 /** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+ *  @author QQQSW
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -94,6 +95,24 @@ public class Model extends Observable {
         setChanged();
     }
 
+    public void check(int col, int row) {
+        Tile currTile = board.tile(col, row);
+        Tile prevTile = board.tile(col, row + 1);
+
+        if (row == board.size() - 1) {
+            return;
+        }
+
+        if (prevTile == null) {
+            check(col, row + 1);
+        }
+
+        if (prevTile.value() == currTile.value()) {
+
+
+        }
+    }
+
     /** Tilt the board toward SIDE. Return true iff this changes the board.
      *
      * 1. If two Tile objects are adjacent in the direction of motion and have
@@ -114,12 +133,44 @@ public class Model extends Observable {
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
+
+        // up
+        for (int row = board.size() - 2; row >= 0; row--) {
+            for (int col = 0; col < board.size() - 1; col++) {
+                Tile currTile = board.tile(col, row);
+                if (currTile != null) {
+                    for (int rtemp = row + 1; rtemp < board.size(); rtemp++) {
+                        Tile prevTile = board.tile(col, rtemp);
+                        if (currTile.value() == prevTile.value()) {
+                            board.move(col, row + 1, currTile);
+                            changed = true;
+                            this.score += currTile.value() * 2;
+                            break;
+                        } else if (prevTile == null) {
+                            check(col, row);
+                        } else { //  currTile != prevTile)
+                            break;
+                        }
+                    }
+                }
+//                 if (board.tile(col, row) == null || board.tile(col, row).value() == board.tile(col, row + 1).value()) {
+//                     Tile t = board.tile(col, row);
+//                     board.move(col, row +1, t);
+//                     changed = true;
+//                 }
+            }
+        }
+
+
         checkGameOver();
         if (changed) {
             setChanged();
         }
         return changed;
     }
+
+
+
 
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
@@ -137,9 +188,16 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null) {
+                        return true;
+                }
+            }
+        }
         return false;
     }
+
 
     /**
      * Returns true if any tile is equal to the maximum valid value.
@@ -147,8 +205,39 @@ public class Model extends Observable {
      * given a Tile object t, we get its value with t.value().
      */
     public static boolean maxTileExists(Board b) {
-        // TODO: Fill in this function.
+        for (int i = 0; i < b.size(); i++) {
+            for (int j = 0; j < b.size(); j++) {
+                if (b.tile(i, j) == null) continue; // we need this, because we don't know whether the object b exits
+                if (b.tile(i, j).value() == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
+    }
+
+    /** judge if exit two adjacent tiles
+     * hava three situation,
+     * */
+    public static boolean atLeastTwoAreSome(Board b) {
+           for (int i = 0; i < b.size() ; i++) {
+               for (int j = 0; j < b.size() ; j++) {
+                   if (i != b.size() - 1 && j != b.size() -1
+                           && (b.tile(i, j).value() == b.tile(i + 1, j).value()   // right below
+                           || b.tile(i, j).value() == b.tile(i , j + 1).value())) {
+                       return true;
+                   }
+                   if (j == b.size() - 1 && i != b.size() - 1  // specially disscuss about the rightest col
+                           && b.tile(i, j).value() == b.tile(i + 1, j).value()) {
+                       return  true;
+                   }
+                   if (i == b.size() - 1 && j != b.size() - 1 // the lowest row
+                           && b.tile(i, j).value() == b.tile(i, j + 1).value()) {
+                       return true;
+                   }
+               }
+           }
+           return false;
     }
 
     /**
@@ -158,7 +247,9 @@ public class Model extends Observable {
      * 2. There are two adjacent tiles with the same value.
      */
     public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
+        if (emptySpaceExists(b) || atLeastTwoAreSome(b)) {
+            return true;
+        }
         return false;
     }
 
@@ -201,3 +292,4 @@ public class Model extends Observable {
         return toString().hashCode();
     }
 }
+
