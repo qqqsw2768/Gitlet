@@ -1,9 +1,6 @@
 package game2048;
 
-import java.util.Formatter;
-import java.util.Observable;
-
-import java.util.HashSet;
+import java.util.*;
 
 /** The state of a game of 2048.
  *  @author QQQSW
@@ -45,8 +42,8 @@ public class Model extends Observable {
         this.gameOver = gameOver;
     }
 
-    /** Return the current Tile at (COL, ROW), where 0 <= ROW < size(),
-     *  0 <= COL < size(). Returns null if there is no tile there.
+    /** Return the current Tile at (col, ROW), where 0 <= ROW < size(),
+     *  0 <= col < size(). Returns null if there is no tile there.
      *  Used for testing. Should be deprecated and removed.
      *  */
     public Tile tile(int col, int row) {
@@ -95,23 +92,23 @@ public class Model extends Observable {
         setChanged();
     }
 
-    public void check(int col, int row) {
-        Tile currTile = board.tile(col, row);
-        Tile prevTile = board.tile(col, row + 1);
-
-        if (row == board.size() - 1) {
-            return;
-        }
-
-        if (prevTile == null) {
-            check(col, row + 1);
-        }
-
-        if (prevTile.value() == currTile.value()) {
-
-
-        }
-    }
+//    public void check(int col, int row) {
+//        Tile currTile = board.tile(col, row);
+//        Tile prevTile = board.tile(col, row + 1);
+//
+//        if (row == board.size() - 1) {
+//            return;
+//        }
+//
+//        if (prevTile == null) {
+//            check(col, row + 1);
+//        }
+//
+//        if (prevTile.value() == currTile.value()) {
+//
+//
+//        }
+//    }
 
     /** Tilt the board toward SIDE. Return true iff this changes the board.
      *
@@ -126,49 +123,54 @@ public class Model extends Observable {
      *    and the trailing tile does not.
      * */
     public boolean tilt(Side side) {
-        boolean changed;
-        changed = false;
-
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
 
-
-        // up
-        for (int row = board.size() - 2; row >= 0; row--) {
-            for (int col = 0; col < board.size() - 1; col++) {
+        board.setViewingPerspective(side);
+        boolean changed = false;
+        int size = board.size();
+        
+        for(int col = 0; col < size; col++) {
+            List<Integer> mergesRows = new ArrayList<>();
+            for (int row = size - 2; row >= 0; row--) {
                 Tile currTile = board.tile(col, row);
-                if (currTile != null) {
-                    for (int rtemp = row + 1; rtemp < board.size(); rtemp++) {
-                        Tile prevTile = board.tile(col, rtemp);
-                        if (currTile.value() == prevTile.value()) {
-                            board.move(col, row + 1, currTile);
-                            changed = true;
-                            this.score += currTile.value() * 2;
-                            break;
-                        } else if (prevTile == null) {
-                            check(col, row);
-                        } else { //  currTile != prevTile)
-                            break;
-                        }
+                if (currTile == null) {
+                    continue;
+                }
+                int moveRow = row; // sentinel
+                for (int row2 = row + 1; row2 < size; row2++) {
+                    Tile prevTile = board.tile(col, row2);
+                    if (prevTile == null) {
+                        moveRow = row2;
+                    } else if (prevTile.value() == currTile.value() && !mergesRows.contains(row2)) {
+                        mergesRows.add(row2);
+                        moveRow = row2;
+                        break;
+                    } else {
+                        break;
                     }
                 }
-//                 if (board.tile(col, row) == null || board.tile(col, row).value() == board.tile(col, row + 1).value()) {
-//                     Tile t = board.tile(col, row);
-//                     board.move(col, row +1, t);
-//                     changed = true;
-//                 }
+                if (moveRow != row) {
+                    changed = true;
+                }
+
+                boolean isMerged = board.move(col, moveRow, currTile);
+
+                if (isMerged) {
+                    this.score += currTile.value() * 2;
+                }
             }
         }
-
 
         checkGameOver();
         if (changed) {
             setChanged();
         }
+
+        board.setViewingPerspective(Side.NORTH);
         return changed;
     }
-
 
 
 
