@@ -3,9 +3,9 @@ package deque;
 public class LinkedListDeque<T> {
 
     private class StuffNode {
-        public T item;
-        public StuffNode before;  // Counterclockwise for linkedList only for addLast
-        public StuffNode next;
+        private T item;
+        private StuffNode before;  // Counterclockwise for linkedList only for addLast
+        private StuffNode next;
 
         public StuffNode(T i, StuffNode b, StuffNode n) { // constructor
             item = i;
@@ -14,7 +14,7 @@ public class LinkedListDeque<T> {
         }
     }
 
-    private StuffNode Link; // mark the node's pointer
+    private StuffNode link; // mark the node's pointer
     private StuffNode first; // addFirst
     private StuffNode last; // addLast
     private int size;
@@ -22,10 +22,10 @@ public class LinkedListDeque<T> {
 
     // Creates an empty linked list deque.
     public LinkedListDeque() {
-        Link = new StuffNode(null, null, null);
+        link = new StuffNode(null, null, null);
         size = 0;
-        first = Link;
-        last = Link;
+        first = link;
+        last = link;
     }
 
     public void addFirst(T item) {
@@ -69,7 +69,7 @@ public class LinkedListDeque<T> {
      * If no such item exists, returns null
      * */
     public T removeFirst() {
-        if (!isEmpty() && first != Link) { // special Link node: only addLast no addFirst
+        if (!isEmpty() && first != link) { // special Link node: only addLast no addFirst
             StuffNode temp = first;
             first = first.next;
             first.before = last;
@@ -77,15 +77,15 @@ public class LinkedListDeque<T> {
             size--;
 
             return temp.item;
-        } else if (!isEmpty() && first == Link) {
+        } else if (!isEmpty() && first == link) {
             first = first.next;
 
             StuffNode temp = first;
             first = first.next;
-            first.before = Link;
-            last.next = Link;
-            Link.next = first;
-            first = Link;  //
+            first.before = link;
+            last.next = link;
+            link.next = first;
+            first = link;  //
             size--;
 
             return temp.item;
@@ -99,22 +99,22 @@ public class LinkedListDeque<T> {
      * If no such item exists, returns null.
      * */
     public T removeLast() {
-        if (!isEmpty() && last != Link) { // special Link node: only addFist no addLast
+        if (!isEmpty() && last != link) { // special Link node: only addFist no addLast
             StuffNode temp = last;
             last = last.before;
             last.next = first;
             size--;
 
             return temp.item;
-        } else if (!isEmpty() && last == Link) {
+        } else if (!isEmpty() && last == link) {
             last = last.before;
 
             StuffNode temp = last;
 
             last = last.before;
-            last.next = Link;
-            Link.before = last;
-            last = Link;
+            last.next = link;
+            link.before = last;
+            last = link;
             size--;
 
             return temp.item;
@@ -166,12 +166,14 @@ public class LinkedListDeque<T> {
         }
     }
 
-//    public Iterator<T> iterator() {
-//        // todo
-//    }
 
-//    public boolean equals(Object o) {
-//        // todo
-//        return false;
-//    }
+    //    public Iterator<T> iterator() {
+    //
+    //    }
+
+    //    public boolean equals(Object o) {
+    //
+    //        return false;
+    //    }
+
 }
