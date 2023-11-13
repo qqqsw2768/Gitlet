@@ -52,7 +52,7 @@ public class BuggyAList<Item> {
     }
 
     /** Returns the number of items in the list. */
-    public int size() {
+    public int size()      {
         return size;
     }
 
