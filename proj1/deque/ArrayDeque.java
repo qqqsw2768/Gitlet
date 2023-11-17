@@ -8,8 +8,8 @@ public class ArrayDeque<T> {
     private int nextFirst;
     private int nextLast;
 
-    private int numFirst; // compute the number that addFirst
-    private int numLast;
+    private int sumFirst; // compute the number that addFirst
+    private int sumLast;
 
     /** Creates an empty array deque. The initial size is 8.*/
     public ArrayDeque() {
@@ -17,8 +17,8 @@ public class ArrayDeque<T> {
         size = 0;
         nextFirst = sizeNum - 1;
         nextLast = 0;
-        numFirst = 0;
-        numLast = 0;
+        sumFirst = 0;
+        sumLast = 0;
     }
 
     /**  Adds an item of type T to the front of the deque. You can assume that item is never null.*/
@@ -28,7 +28,7 @@ public class ArrayDeque<T> {
         }
         arrayT[nextFirst] = item;
         size = size + 1;
-        numFirst = numFirst + 1;
+        sumFirst = sumFirst + 1;
         nextFirst = (nextFirst + sizeNum - 1) % sizeNum; // circle the array
     }
 
@@ -38,39 +38,38 @@ public class ArrayDeque<T> {
         }
         arrayT[nextLast] = item;
         size = size + 1;
-        numLast = numLast + 1;
+        sumLast = sumLast + 1;
         nextLast = (nextLast + 1) % sizeNum;
     }
 
     /** Resizes the underlying array to the target capacity */
     private void resize(int capacity) {
         T[] temp = (T[]) new Object[capacity];
-        if (numFirst != 0) {
-            for (int i = 0; i < numFirst; i++) {
-                int index = sizeNum - numFirst + i;
+        if (sumFirst != 0) {
+            for (int i = 0; i < sumFirst; i++) {
+                int index = sizeNum - sumFirst + i;
                 temp[i] = arrayT[index];
             }
         }
-        if (numLast != 0) {
-            System.arraycopy(arrayT, nextLast - numLast, temp, numFirst, numLast);
+        if (sumLast != 0) {
+            System.arraycopy(arrayT, 0, temp, sumFirst, sumLast); // 2th para: nextLast - sumLast
         }
         arrayT = temp;
-        numLast = sizeNum;
-        numFirst = 0;
+        sumLast = size; // after resizing, the whole items is the 'Last' part
+        sumFirst = 0; // and no 'First' part
         sizeNum = sizeNum * 2;
         nextLast = size;
         nextFirst = sizeNum - 1;
     }
 
-    /** For the removeFirst that "numFirst == 0" */
+    /** For the removeFirst that "sumFirst == 0" */
     private void resize() {
         T[] temp = (T[]) new Object[sizeNum];
-        System.arraycopy(arrayT, 1, temp, 0, numLast);
+        System.arraycopy(arrayT, 1, temp, 0, sumLast - 1);
         arrayT = temp;
-        numLast--;
+        sumLast--;
         nextLast--;
     }
-
 
     public boolean isEmpty() {
         return size == 0;
@@ -87,14 +86,14 @@ public class ArrayDeque<T> {
      * print out a new line
      * */
     public void printDeque() {
-        if (numFirst != 0) { // If the queue has addFirst part then print it
-            for (int i = 0; i < numFirst; i++) {
-                int index = sizeNum - numFirst + i;
+        if (sumFirst != 0) { // If the queue has addFirst part then print it
+            for (int i = 0; i < sumFirst; i++) {
+                int index = sizeNum - sumFirst + i;
                 System.out.print(arrayT[index] + " ");
             }
         }
 
-        for (int i = 0; i < numLast; i++) {
+        for (int i = 0; i < sumLast; i++) {
             System.out.print(arrayT[i] + " ");
         }
 
@@ -109,7 +108,11 @@ public class ArrayDeque<T> {
             return null;
         }
 
-        if (numFirst == 0) {
+        if ((size < arrayT.length / 4) && (size > 4)) {
+            resize(arrayT.length / 4);
+        }
+
+        if (sumFirst == 0) {
             T temp = get(0);
             arrayT[0] = null;
             size--;
@@ -121,7 +124,7 @@ public class ArrayDeque<T> {
         T temp = get(nextFirst + 1);
         arrayT[nextFirst + 1] = null;
         size = size - 1;
-        numFirst--;
+        sumFirst--;
         nextFirst++;
 
         return temp;
@@ -135,16 +138,20 @@ public class ArrayDeque<T> {
             return null;
         }
 
+        if ((size < arrayT.length / 4) && (size > 4)) {
+            resize(arrayT.length / 4);
+        }
+
         T temp = get(nextLast - 1);
         arrayT[nextLast - 1] = null;
         size--;
         nextLast--;
-        numLast--;
+        sumLast--;
 
         return temp;
     }
 
-    /** get must use iteration, not recursion. 0 from the first*/
+    /** get must use iteration, not recursion. 0 from the first */
     public T get(int index) {
         return arrayT[index];
     }
