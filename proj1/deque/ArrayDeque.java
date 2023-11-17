@@ -108,24 +108,26 @@ public class ArrayDeque<T> {
             return null;
         }
 
-        if ((size < arrayT.length / 4) && (size > 4)) {
-            resize(arrayT.length / 4);
-        }
-
         if (sumFirst == 0) {
             T temp = get(0);
             arrayT[0] = null;
             size--;
             resize();
+            checkUseOfMomery();
 
             return  temp;
         }
+
+//        if (nextFirst == sizeNum) {
+//            nextFirst--;
+//        }
 
         T temp = get(nextFirst + 1);
         arrayT[nextFirst + 1] = null;
         size = size - 1;
         sumFirst--;
         nextFirst++;
+        checkUseOfMomery();
 
         return temp;
     }
@@ -138,12 +140,12 @@ public class ArrayDeque<T> {
             return null;
         }
 
-        if ((size < arrayT.length / 4) && (size > 4)) {
-            resize(arrayT.length / 4);
+        if (size == sizeNum) { // manually set the size when the 'real' array is full
+            nextLast = size;
         }
 
-        if (size == sizeNum) {
-            nextLast = size;
+        if (nextLast == 0) { // for the indexoutofbounds
+            nextLast++;
         }
 
         T temp = get(nextLast - 1);
@@ -152,6 +154,7 @@ public class ArrayDeque<T> {
         nextLast--;
         sumLast--;
 
+        checkUseOfMomery();
         return temp;
     }
 
@@ -161,6 +164,12 @@ public class ArrayDeque<T> {
             return null;
         }
         return arrayT[index];
+    }
+
+    private void checkUseOfMomery() {
+        if ((size < arrayT.length / 4) && (size > 4)) {
+            resize(arrayT.length / 4);
+        }
     }
 
     //    public Iterator<T> iterator() {
