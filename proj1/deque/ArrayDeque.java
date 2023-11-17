@@ -2,10 +2,10 @@ package deque;
 
 public class ArrayDeque<T> {
     private T[] arrayT;
-    private int size;
-    private int sizeNum = 8;
+    private int size; // the size that not including null
+    private int sizeNum = 8; // the size of the whole array (including null)
 
-    private int nextFirst;
+    private int nextFirst; // the next position of addFirst
     private int nextLast;
 
     private int sumFirst; // compute the number that addFirst
@@ -157,6 +157,9 @@ public class ArrayDeque<T> {
 
     /** get must use iteration, not recursion. 0 from the first */
     public T get(int index) {
+        if (isEmpty()) {
+            return null;
+        }
         return arrayT[index];
     }
 
