@@ -142,6 +142,10 @@ public class ArrayDeque<T> {
             resize(arrayT.length / 4);
         }
 
+        if (size == sizeNum) {
+            nextLast = size;
+        }
+
         T temp = get(nextLast - 1);
         arrayT[nextLast - 1] = null;
         size--;
