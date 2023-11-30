@@ -29,13 +29,12 @@ public class TimeSLList {
         // input N
         for (int i = 1000; i <= 128000; i *= 2) {
             Ns.addLast(i);
-            ops.addLast(i);
         }
 
         for (int i = 0; i < Ns.size(); i++) {
             int N = Ns.get(i);
-            int M = ops.get(i);
-            int temp = 0;
+//            int M = ops.get(i);
+//            int temp = 0;
             SLList<Integer> slList = new SLList<>();
 
             // Add N items to the SLList
@@ -46,13 +45,18 @@ public class TimeSLList {
             // Start the timer
             Stopwatch stopwatch = new Stopwatch();
 
-            // Perform M getLast op
-            for (int j = 0; j < M; j++) {
-                temp = slList.getLast();
+            int op = 0;
+            // Perform N getLast N
+            for (int j = 0; j < N; j++) {
+                slList.getLast();
+                op += 1;
             }
 
             // Check the timer
             double timeInSec = stopwatch.elapsedTime();
+
+            ops.addLast(op);
+            // Remove the
             times.addLast(timeInSec);
         }
 
