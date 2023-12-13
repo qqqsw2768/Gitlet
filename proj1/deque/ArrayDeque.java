@@ -2,8 +2,8 @@ package deque;
 
 public class ArrayDeque<T> {
     private T[] arrayT;
-    private int size; // the size that not including null
-    private int sizeNum = 8; // the size of the whole array (including null)
+    private int size; // the size that not including null, count the numbers that insert into array
+    private int sizeNum = 8; // the size of the whole array (including null) "INITIAL"
 
     private int nextFirst; // the next position of addFirst
     private int nextLast;
@@ -24,7 +24,7 @@ public class ArrayDeque<T> {
     /**  Adds an item of type T to the front of the deque. You can assume that item is never null.*/
     public void addFirst(T item) {
         if (size == sizeNum) {
-            resize(sizeNum * 2);
+            resize(sizeNum * 2, 1);
         }
         arrayT[nextFirst] = item;
         size = size + 1;
@@ -34,7 +34,7 @@ public class ArrayDeque<T> {
 
     public void addLast(T item) {
         if (size == sizeNum) { // if last circle the queue is full and the next circle they will on this condition
-            resize(sizeNum * 2);
+            resize(sizeNum * 2, 1);
         }
         arrayT[nextLast] = item;
         size = size + 1;
@@ -43,7 +43,7 @@ public class ArrayDeque<T> {
     }
 
     /** Resizes the underlying array to the target capacity */
-    private void resize(int capacity) {
+    private void resize(int capacity, int flag) { // flag: addResize->1 removeResive->0
         T[] temp = (T[]) new Object[capacity];
         if (sumFirst != 0) {
             for (int i = 0; i < sumFirst; i++) {
@@ -57,18 +57,33 @@ public class ArrayDeque<T> {
         arrayT = temp;
         sumLast = size; // after resizing, the whole items is the 'Last' part
         sumFirst = 0; // and no 'First' part
-        sizeNum = sizeNum * 2;
+        if (flag == 1) {
+            sizeNum = sizeNum * 2;
+        } else{
+            sizeNum = sizeNum / 2;
+        }
         nextLast = size;
         nextFirst = sizeNum - 1;
     }
 
     /** For the removeFirst that "sumFirst == 0" */
-    private void resize() {
+    private void resizeFirst() {
         T[] temp = (T[]) new Object[sizeNum];
         System.arraycopy(arrayT, 1, temp, 0, sumLast - 1);
         arrayT = temp;
         sumLast--;
         nextLast--;
+    }
+
+    /** 补全First部分删除留下的空格
+     * 0 0 0 0 0 0 0 0 0 0 0 (10位
+     * 0 0 0 0 0 0 0 0 0 8 0
+     * 将“8” 移到后面去
+     */
+    private void resizeLast() {
+        T[] temp = (T[]) new Object[sizeNum];
+        System.arraycopy(arrayT, nextFirst, temp, nextFirst + 1, sumFirst);
+        arrayT = temp;
     }
 
     public boolean isEmpty() {
@@ -112,15 +127,11 @@ public class ArrayDeque<T> {
             T temp = get(0);
             arrayT[0] = null;
             size--;
-            resize();
+            resizeFirst();
             checkUseOfMomery();
 
-            return  temp;
+            return temp;
         }
-
-//        if (nextFirst == sizeNum) {
-//            nextFirst--;
-//        }
 
         T temp = get(nextFirst + 1);
         arrayT[nextFirst + 1] = null;
@@ -139,15 +150,21 @@ public class ArrayDeque<T> {
         if (isEmpty()) {
             return null;
         }
-
-        if (size == sizeNum) { // manually set the size when the 'real' array is full
-            nextLast = size;
-        }
-
+//        if (size == sizeNum) { // manually set the size when the 'real' array is full
+//            nextLast = size;
+//        }
         if (nextLast == 0) { // for the indexoutofbounds
-            nextLast++;
-        }
+            int tempLast = nextLast;
+            tempLast = sizeNum - 1;
+            T temp = get(tempLast);
+            nextFirst++;
+            sumFirst--;
+            size--;
+            resizeLast();
+            checkUseOfMomery();
 
+            return temp;
+        }
         T temp = get(nextLast - 1);
         arrayT[nextLast - 1] = null;
         size--;
@@ -166,9 +183,9 @@ public class ArrayDeque<T> {
         return arrayT[index];
     }
 
-    private void checkUseOfMomery() {
-        if ((size < arrayT.length / 4) && (size > 4)) {
-            resize(arrayT.length / 4);
+    public void checkUseOfMomery() {
+        if ((size < arrayT.length / 4) && (size > 0) && sizeNum > 8) {
+            resize(arrayT.length / 2, 0);
         }
     }
 
