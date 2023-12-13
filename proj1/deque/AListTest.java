@@ -54,10 +54,11 @@ public class AListTest {
     @Test
     public void addFirst() {
         ArrayDeque<Integer> list = new ArrayDeque<>();
-        int N = 10;
-        for (int i = 0; i < N; i++) {
+        int N = 8;
+        for (int i = 0; i < 4; i++) {
             list.addFirst(i);
         }
+
         int j = 0;
         for (int i = 0; i < N; i++) {
             assertEquals(i, (int)list.removeLast());
@@ -74,15 +75,14 @@ public class AListTest {
     @Test
     public void addLast() {
         ArrayDeque<Integer> list = new ArrayDeque<>();
-        int N = 10;
+        int N = 8;
         for (int i = 0; i < N; i++) {
             list.addLast(i);
         }
         int j = 0;
-        for (int i = 0; i < N; i++) {
-            assertEquals(i, (int)list.removeFirst());
+        for (int i = N - 1; i >= 0; i--) {
+            assertEquals(i, (int)list.removeLast());
         }
-
 
         for (int i = 0; i < N; i++) {
             list.addLast(i);

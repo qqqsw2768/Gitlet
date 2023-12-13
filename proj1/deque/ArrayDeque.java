@@ -90,6 +90,10 @@ public class ArrayDeque<T> {
         return size == 0;
     }
 
+    public boolean isFull() {
+        return size == sizeNum;
+    }
+
     /** Returns the number of items in the deque.*/
     // size must take constant time.
     public int size() {
@@ -123,6 +127,10 @@ public class ArrayDeque<T> {
             return null;
         }
 
+        if (isFull() && nextLast == 0) {
+            nextLast = sizeNum;
+        }
+
         if (sumFirst == 0) {
             T temp = get(0);
             arrayT[0] = null;
@@ -133,6 +141,9 @@ public class ArrayDeque<T> {
             return temp;
         }
 
+        if (isFull() && nextFirst == sizeNum - 1) {
+            nextFirst = -1;
+        }
         T temp = get(nextFirst + 1);
         arrayT[nextFirst + 1] = null;
         size = size - 1;
@@ -150,12 +161,14 @@ public class ArrayDeque<T> {
         if (isEmpty()) {
             return null;
         }
-//        if (size == sizeNum) { // manually set the size when the 'real' array is full
-//            nextLast = size;
-//        }
-        if (nextLast == 0) { // for the indexoutofbounds
-            int tempLast = nextLast;
-            tempLast = sizeNum - 1;
+        if (isFull() && nextLast == 0) {
+            nextLast = sizeNum;
+        }
+        if (isFull() && nextFirst == sizeNum - 1 && sumLast == 0) { // manually set the size when the 'real' array is full
+            nextFirst = -1;
+        }
+        if (sumLast == 0) { // for the all addFirst no addLast
+            int tempLast = sizeNum - 1;
             T temp = get(tempLast);
             nextFirst++;
             sumFirst--;
