@@ -1,5 +1,7 @@
 package deque;
 
+import java.util.Iterator;
+
 public class ArrayDeque<T> {
     private T[] arrayT;
     private int size; // the size that not including null, count the numbers that insert into array
@@ -202,10 +204,52 @@ public class ArrayDeque<T> {
         }
     }
 
-    //    public Iterator<T> iterator() {
-    //    }
+        public Iterator<T> iterator() {
+            return new ArrayIterator();
+        }
 
-    //    public boolean equals(Object o) {
-    //        return false;
-    //    }
+        private class ArrayIterator implements Iterator<T> {
+            private  int curSize;
+
+            public ArrayIterator() {
+                this.curSize = 0;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return curSize < size();
+            }
+
+            @Override
+            public T next() {
+                T retuenItem = get(curSize);
+                curSize++;
+                return retuenItem;
+            }
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null) {
+                return false;
+            }
+            if (!(o instanceof Deque)){
+                return false;
+            }
+
+            Deque<T> obj = (Deque<T>)o;
+            if (obj.size() != this.size()){
+                return false;
+            }
+            for(int i = 0; i < obj.size(); i += 1){
+                T itemFromObj =  obj.get(i);
+                T itemFromThis = this.get(i);
+                if (!itemFromObj.equals(itemFromThis)){
+                    return false;
+                }
+            }
+            return true;
+        }
 }

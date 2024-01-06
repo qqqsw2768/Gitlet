@@ -91,4 +91,6 @@ public class AListTest {
             assertEquals(i, (int)list.removeFirst());
         }
     }
+
+
 }
