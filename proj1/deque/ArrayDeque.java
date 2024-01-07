@@ -102,6 +102,11 @@ public class ArrayDeque<T> {
         return size;
     }
 
+    /** Returns the really number of the array not the number of add, our array could empty in the middle sometimes*/
+    public int sumSize() {
+        return sizeNum;
+    }
+
     /** Prints the items in the deque from first to last,
      * separated by a space. Once all the items have been printed,
      * print out a new line
@@ -204,52 +209,59 @@ public class ArrayDeque<T> {
         }
     }
 
-        public Iterator<T> iterator() {
-            return new ArrayIterator();
+    public Iterator<T> iterator() {
+        return new ArrayIterator();
+    }
+
+    private class ArrayIterator implements Iterator<T> {
+        private int curSize;
+        private int curIndex;
+
+        public ArrayIterator() {
+            this.curSize = 0;
+            this.curIndex = 0;
         }
 
-        private class ArrayIterator implements Iterator<T> {
-            private  int curSize;
-
-            public ArrayIterator() {
-                this.curSize = 0;
-            }
-
-            @Override
-            public boolean hasNext() {
-                return curSize < size();
-            }
-
-            @Override
-            public T next() {
-                T retuenItem = get(curSize);
-                curSize++;
-                return retuenItem;
-            }
+        @Override
+        public boolean hasNext() {
+            return curSize < size();
         }
 
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
+        @Override
+        public T next() {
+            while (hasNext() && get(curIndex) == null) {  // a much null in the middle of the array, so skip it
+                curIndex++;
             }
-            if (o == null) {
-                return false;
-            }
-            if (!(o instanceof Deque)){
-                return false;
-            }
+            T retuenItem = get(curIndex);
+            curSize++;
+            curIndex++;
 
-            Deque<T> obj = (Deque<T>)o;
-            if (obj.size() != this.size()){
-                return false;
-            }
-            for(int i = 0; i < obj.size(); i += 1){
-                T itemFromObj =  obj.get(i);
-                T itemFromThis = this.get(i);
-                if (!itemFromObj.equals(itemFromThis)){
-                    return false;
-                }
-            }
+            return retuenItem;
+        }
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) {
             return true;
         }
+        if (o == null) {
+            return false;
+        }
+        if (!(o instanceof Deque)){
+            return false;
+        }
+
+        Deque<T> obj = (Deque<T>)o;
+        if (obj.size() != this.size()){
+            return false;
+        }
+        for(int i = 0; i < obj.size(); i += 1){
+            T itemFromObj =  obj.get(i);
+            T itemFromThis = this.get(i);
+            if (!itemFromObj.equals(itemFromThis)){
+                return false;
+            }
+        }
+        return true;
+    }
 }

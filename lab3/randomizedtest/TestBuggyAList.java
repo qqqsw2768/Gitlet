@@ -34,7 +34,7 @@ public class TestBuggyAList {
         AListNoResizing<Integer> correct = new AListNoResizing<>();
         BuggyAList<Integer> broken = new BuggyAList<>();
 
-        int N = 5000;
+        int N = 50000;
         for (int i = 0; i < N; i += 1) {
             int operationNumber = StdRandom.uniform(0, 4);
             if (operationNumber == 0) {
