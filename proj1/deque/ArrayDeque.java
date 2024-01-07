@@ -2,7 +2,7 @@ package deque;
 
 import java.util.Iterator;
 
-public class ArrayDeque<T> {
+public class ArrayDeque<T> implements Deque<T> {
     private T[] arrayT;
     private int size; // the size that not including null, count the numbers that insert into array
     private int sizeNum = 8; // the size of the whole array (including null) "INITIAL"
@@ -24,6 +24,7 @@ public class ArrayDeque<T> {
     }
 
     /**  Adds an item of type T to the front of the deque. You can assume that item is never null.*/
+    @Override
     public void addFirst(T item) {
         if (size == sizeNum) {
             resize(sizeNum * 2, 1);
@@ -34,6 +35,7 @@ public class ArrayDeque<T> {
         nextFirst = (nextFirst + sizeNum - 1) % sizeNum; // circle the array
     }
 
+    @Override
     public void addLast(T item) {
         if (size == sizeNum) { // if last circle the queue is full and the next circle they will on this condition
             resize(sizeNum * 2, 1);
@@ -88,10 +90,6 @@ public class ArrayDeque<T> {
         arrayT = temp;
     }
 
-    public boolean isEmpty() {
-        return size == 0;
-    }
-
     public boolean isFull() {
         return size == sizeNum;
     }
@@ -111,6 +109,7 @@ public class ArrayDeque<T> {
      * separated by a space. Once all the items have been printed,
      * print out a new line
      * */
+    @Override
     public void printDeque() {
         if (sumFirst != 0) { // If the queue has addFirst part then print it
             for (int i = 0; i < sumFirst; i++) {
@@ -129,6 +128,7 @@ public class ArrayDeque<T> {
     /** Removes and returns the item at the front of the deque.
      * If no such item exists, returns null
      * */
+    @Override
     public T removeFirst() {
         if (isEmpty()) {
             return null;
@@ -164,6 +164,7 @@ public class ArrayDeque<T> {
     /**Removes and returns the item at the back of the deque.
      * If no such item exists, returns null.
      * */
+    @Override
     public T removeLast() {
         if (isEmpty()) {
             return null;
@@ -196,6 +197,7 @@ public class ArrayDeque<T> {
     }
 
     /** get must use iteration, not recursion. 0 from the first */
+    @Override
     public T get(int index) {
         if (isEmpty()) {
             return null;

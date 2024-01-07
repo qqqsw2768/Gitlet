@@ -8,5 +8,11 @@ public interface Deque<T> {
     T removeFirst();
     T removeLast();
     T get(int index);
-    boolean isEmpty();
+
+    default boolean isEmpty() {
+        if (size() == 0) {
+            return true;
+        }
+        return false;
+    }
 }
