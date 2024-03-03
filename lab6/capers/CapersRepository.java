@@ -1,10 +1,13 @@
 package capers;
 
 import java.io.File;
+import java.io.IOException;
+
+import static capers.Dog.DOG_FOLDER;
 import static capers.Utils.*;
 
 /** A repository for Capers 
- * @author TODO
+ * @author qqqsw
  * The structure of a Capers Repository is as follows:
  *
  * .capers/ -- top level folder for all persistent data in your lab12 folder
@@ -18,8 +21,7 @@ public class CapersRepository {
     static final File CWD = new File(System.getProperty("user.dir"));
 
     /** Main metadata folder. */
-    static final File CAPERS_FOLDER = null; // TODO Hint: look at the `join`
-                                            //      function in Utils
+    static final File CAPERS_FOLDER = Utils.join(CWD,"capers", "story");
 
     /**
      * Does required filesystem operations to allow for persistence.
@@ -29,9 +31,29 @@ public class CapersRepository {
      * .capers/ -- top level folder for all persistent data in your lab12 folder
      *    - dogs/ -- folder containing all of the persistent data for dogs
      *    - story -- file containing the current story
+     *
+     *    make two above dir and file, i made this so ugly
      */
     public static void setupPersistence() {
-        // TODO
+        File capersDir = new File(String.valueOf(CAPERS_FOLDER));
+        File dogsDir = new File(String.valueOf(DOG_FOLDER));
+
+        if (!capersDir.exists()) {
+            capersDir.mkdir();
+        }
+        if (!dogsDir.exists()) {
+            dogsDir.mkdir();
+        }
+
+        File story = new File(CAPERS_FOLDER, "story.txt");
+
+        if (!story.exists()) {
+            try {
+                story.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**
@@ -40,7 +62,11 @@ public class CapersRepository {
      * @param text String of the text to be appended to the story
      */
     public static void writeStory(String text) {
-        // TODO
+        File story = new File(CAPERS_FOLDER, "story.txt"); // not create just invoke, like pointer
+        String oldContent = Utils.readContentsAsString(story);// read out the recently added contents
+        writeContents(story,oldContent, text, "\n"); // join the old and new together, put them all into the file
+        String pirntOut = Utils.readContentsAsString(story);// read all contents, ready to print them out
+        System.out.print(pirntOut);
     }
 
     /**
@@ -49,7 +75,9 @@ public class CapersRepository {
      * Also prints out the dog's information using toString().
      */
     public static void makeDog(String name, String breed, int age) {
-        // TODO
+        Dog dog = new Dog(name, breed, age);
+        dog.saveDog();
+        System.out.println(dog.toString());
     }
 
     /**
@@ -59,6 +87,8 @@ public class CapersRepository {
      * @param name String name of the Dog whose birthday we're celebrating.
      */
     public static void celebrateBirthday(String name) {
-        // TODO
+        Dog dog = Dog.fromFile(name);
+        dog.haveBirthday();
+        dog.saveDog();
     }
 }
