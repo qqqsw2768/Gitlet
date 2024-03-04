@@ -39,13 +39,13 @@ public class CapersRepository {
         File dogsDir = new File(String.valueOf(DOG_FOLDER));
 
         if (!capersDir.exists()) {
-            capersDir.mkdir();
+            capersDir.mkdirs();
         }
         if (!dogsDir.exists()) {
-            dogsDir.mkdir();
+            dogsDir.mkdirs();
         }
 
-        File story = new File(CAPERS_FOLDER, "story.txt");
+        File story = new File(capersDir, "story");
 
         if (!story.exists()) {
             try {
@@ -62,9 +62,13 @@ public class CapersRepository {
      * @param text String of the text to be appended to the story
      */
     public static void writeStory(String text) {
-        File story = new File(CAPERS_FOLDER, "story.txt"); // not create just invoke, like pointer
+        File story = new File(CAPERS_FOLDER, "story"); // not create just invoke, like pointer
         String oldContent = Utils.readContentsAsString(story);// read out the recently added contents
-        writeContents(story,oldContent, text, "\n"); // join the old and new together, put them all into the file
+        if (oldContent == null || oldContent.length() == 0) {
+            writeContents(story,text); // first write and not put nextLine in the first
+        } else {
+            writeContents(story,oldContent, "\n", text);// join the old and new together, put them all into the file
+        }
         String pirntOut = Utils.readContentsAsString(story);// read all contents, ready to print them out
         System.out.print(pirntOut);
     }
@@ -77,7 +81,7 @@ public class CapersRepository {
     public static void makeDog(String name, String breed, int age) {
         Dog dog = new Dog(name, breed, age);
         dog.saveDog();
-        System.out.println(dog.toString());
+        System.out.print(dog.toString());
     }
 
     /**

@@ -41,8 +41,7 @@ public class Dog implements Serializable {
      * @return Dog read from file
      */
     public static Dog fromFile(String name) {
-        String fileName = name + ".txt";
-        File dogFile = new File(DOG_FOLDER, fileName);
+        File dogFile = new File(DOG_FOLDER, name);
         Dog dog = readObject(dogFile, Dog.class); // get a Class object by using <Class name>.class
 
         return dog;
@@ -61,9 +60,8 @@ public class Dog implements Serializable {
      * Saves a dog to a file for future use.
      */
     public void saveDog() {
-        // TODO (hint: don't forget dog names are unique)
-        String fileName = this.name + ".txt";
-        File dogFile = new File(DOG_FOLDER, fileName);
+//        String fileName = this.name + ".txt";
+        File dogFile = new File(DOG_FOLDER, name);
         writeObject(dogFile,this);
         // this will also read all and write all, so just make every dog a file
     }
