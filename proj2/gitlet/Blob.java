@@ -1,10 +1,12 @@
 package gitlet;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.TreeMap;
 
 import static gitlet.Repository.BLOB_DIR;
+import static gitlet.Repository.CWD;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet blob object.
@@ -32,24 +34,42 @@ public class Blob implements Serializable {
     }
 
     /**
-     * store the blob: blob -> file
+     * Store the blob: blob -> file, Serialization
      * name it by its hash
      */
     public void saveBlob() {
-        File fileToBlob = join(BLOB_DIR, this.getHashId()); // the path that the blob be stored
-        writeObject(fileToBlob, this); // persist the blob
+        File file = join(BLOB_DIR, this.getHashId()); // the path that the blob be stored
+        if (file.exists()) { // no modified in CWD compare to addStaging
+            System.exit(0);
+        }
+        writeObject(file, this); // persist the blob
     }
 
     /**
-     * Delete the fileName mapping of blob
+     * Delete the blob in the stagingArea by it's mapping fileName
      * @param fileName
      */
-    public static void deleteBlob(StagingArea stagingArea, String fileName) {
+    public static void deleteBlobInStage(StagingArea stagingArea, String fileName) {
         TreeMap<String,String> treeMap = stagingArea.getFileToBlobMap();
         String hashId = treeMap.get(fileName);
         System.out.println(hashId);
         File file = join(BLOB_DIR, hashId);
         file.delete();
+    }
+
+    /**
+     * Deserialization
+     * Let the blob reverse to file --- make a new file
+     * @throws IOException
+     */
+    public void newFileFromBlob() throws IOException {
+        File file = new File(CWD, this.getPlainName());
+        if (file.exists()) {
+            writeContents(file, this.getPlainContent());
+        } else {
+            file.createNewFile();
+            writeContents(file, this.getPlainContent());
+        }
     }
 
     public String getHashId() {

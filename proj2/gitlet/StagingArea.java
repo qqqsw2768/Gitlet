@@ -17,26 +17,44 @@ public class StagingArea implements Serializable {
     /** The mapping of file and its blob hash id
      * <FILENAME, BLOBHASH>
      * */
-    private TreeMap<String, String> fileToBlobMap = new TreeMap<>();
-
-//    /** In addition or removal file */
-//    private File IN_FILE;
-//
-//    public StagingArea(File IN_FILE) {
-//        this.IN_FILE = IN_FILE;
-//        this.fileToBlobMap = new TreeMap<>();
-//    }
-
+    private TreeMap<String, String> fileToBlobMap;
 
     public StagingArea() {
-        this.fileToBlobMap = new TreeMap<String, String>();
+        this.fileToBlobMap = new TreeMap<>();
     }
 
     /**
      * add file to stagingArea of addition: make the mapping of StagingArea -> blob
      * @param blob
      */
-    public StagingArea addStage(Blob blob) {
+    public StagingArea addStageAdd(Blob blob) {
+        this.fileToBlobMap.put(blob.getPlainName(), blob.getHashId());
+        return this;
+    }
+
+    public StagingArea(Blob blob) {
+        TreeMap<String, String> treeMap= new TreeMap<>();
+        treeMap.put(blob.getPlainName(), blob.getHashId());
+        this.fileToBlobMap = treeMap;
+    }
+
+    /**
+     * Get blob object by hashId, Deserialization
+     * @return a Blob object
+     */
+    public static StagingArea newStageRm(String hashId) {
+        File file = new File(BLOB_DIR, hashId);
+        Blob blob = readObject(file, Blob.class);
+        return new StagingArea(blob);
+    }
+
+    /**
+     * Get blob object by hashId, Deserialization
+     * @return a Blob object
+     */
+    public StagingArea addStageRm(String hashId) {
+        File file = new File(BLOB_DIR, hashId);
+        Blob blob = readObject(file, Blob.class);
         this.fileToBlobMap.put(blob.getPlainName(), blob.getHashId());
         return this;
     }
@@ -48,7 +66,7 @@ public class StagingArea implements Serializable {
      */
     public static StagingArea getStageFromFile(String stagePath) {
         StagingArea stagingArea = null;
-        String add = readContentsAsString(ADD);
+        String add = readContentsAsString(ADD); // if the file is null the `readObject` will fail
         String rm = readContentsAsString(RM);
 
         if (stagePath.equals("add") && !add.isEmpty()) {
@@ -60,14 +78,14 @@ public class StagingArea implements Serializable {
     }
 
     /**
-     * Set current branch's active pointer
-     * Store in branchName/"name" file
-     * @param commit
+     * Get the treeMap from addStaging
+     * @param stagePath
+     * @return
      */
-    public static void setCurBranchPointer(Commit commit){
-        File filePath = join(BRANCH_DIR, commit.getBranchName());
-        writeObject(filePath, commit);
+    public static TreeMap<String, String> getMapFrom(String stagePath) {
+        return getStageFromFile(stagePath).getFileToBlobMap();
     }
+
     /**
      * If the StageArea map is empty will return 1
      * @return
@@ -85,12 +103,19 @@ public class StagingArea implements Serializable {
     }
 
     /**
-     * get the map from StagingArea
-     * @return a TreeMap in StagingArea
+     * Clear special file in addition staging if exists
+     * @param fileName
      */
-//    public TreeMap<String, String> getFileToBlobMap() {
-//        return  (TreeMap<String, String>) this.fileToBlobMap.clone();
-//    }
+    public static void deleteFileInADD(String fileName) {
+        StagingArea stagingArea = getStageFromFile("add");
+        if (stagingArea != null) {
+            TreeMap<String, String> map = stagingArea.getFileToBlobMap();
+            if (map.containsKey(fileName)) {
+                Blob.deleteBlobInStage(stagingArea, fileName);
+                map.remove(fileName);
+            }
+        }
+    }
 
     public TreeMap<String, String> getFileToBlobMap() {
         return fileToBlobMap;

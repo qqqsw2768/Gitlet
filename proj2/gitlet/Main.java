@@ -1,9 +1,8 @@
 package gitlet;
 
-import java.io.File;
 import java.io.IOException;
 
-import static gitlet.Repository.*;;
+import static gitlet.Repository.*;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author qqqsw
@@ -24,16 +23,17 @@ public class Main {
             case "init":
                 init();
                 break;
-            case "add":
+            case "add": //todo: check init before executing the below
                 add(args[1]);
                 break;
             case "commit":
                 commit(args[1]); // message
+                // TODO failure case
                 break;
             case "rm":
                 rm(args[1]);
                 break;
-            case "log":
+            case "log": // TODO: print the merge :the 5th commitId
                 log();
                 break;
             case "global-log":
@@ -41,6 +41,25 @@ public class Main {
                 break;
             case "find":
                 find(args[1]);
+                break;
+            case "branch":
+                branch(args[1]);
+                break;
+            case "checkout":
+                if (args[1].equals("--")){
+                    checkout(args[2]);
+                } else if (args.length == 4 && args[2].equals("--")) {
+                    checkout(args[1], args[3]);
+                } else {
+                    checkoutBranch(args[1]);
+                }
+                break;
+            case "status":
+                status();
+                break;
+            default:
+                System.out.println("Unknown command: " + firstArg);
+                break;
         }
     }
 }
