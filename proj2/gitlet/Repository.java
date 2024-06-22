@@ -50,6 +50,12 @@ public class Repository {
     /** Store the current branch's name, just name, because HEAD doesn't store the cur name */
     public static final File CUR_BRANCH = join(GITLET_DIR, "CurBranch");
 
+    /** the List that be used by checkIn */
+    public static List<String> stagedFilesAdd = new ArrayList<>();
+    public static List<String> stagedFilesRm = new ArrayList<>();
+    public static List<String> modified = new ArrayList<>();
+    public static List<String> deleted = new ArrayList<>();
+    public static List<String> restFiles = new ArrayList<>(); // Untracked files
 
     /** Creates a new Gitlet version-control system in the current directory.
      * init current cwd:
@@ -172,7 +178,7 @@ public class Repository {
         Commit commit = new Commit(msg, hashId, timestamp, parentList, nameToBlobMap);
 
         // update HEAD & curBranch's active pointer
-        setHEAD(commit, getCurBracnchName());
+        setHEAD(commit, getCurBranchName());
         updateBranch(commit);
 
         // persist
@@ -308,22 +314,33 @@ public class Repository {
      * @param branchName
      */
     public static void checkoutBranch(String branchName) throws IOException {
-        if (branchName.equals(getCurBracnchName())) {
+        if (branchName.equals(getCurBranchName())) {
             System.out.println("No need to checkout the current branch.");
         }
 
         Commit checkout = getBranchByName(branchName);
+        switchCwd1To2(getHEAD(), checkout, branchName);
+    }
+
+    /**
+     * Set CWD from `first` commit to `second` commit
+     * Set `second` commit as HEAD
+     * @param first delete the files in "first"
+     * @param second create the files in "second"
+     * @param branchName in this branch set the HEAD pointer
+     * @throws IOException
+     */
+    private static void switchCwd1To2(Commit first, Commit second, String branchName) throws IOException {
         checkStatus();
         if (!restFiles.isEmpty() || !stagedFilesAdd.isEmpty() || !modified.isEmpty()) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
             System.exit(0);
         }
 
-        deleteAllFilesFrom(getHEAD());
-        createAllFilesFrom(checkout);
+        deleteAllFilesFrom(first);
+        createAllFilesFrom(second);
 
-        setHEAD(checkout, branchName);
-        updateBranch(checkout);
+        setHEAD(second, branchName);
     }
 
     /**
@@ -396,12 +413,6 @@ public class Repository {
         }
     }
 
-    public static List<String> stagedFilesAdd = new ArrayList<>();
-    public static List<String> stagedFilesRm = new ArrayList<>();
-    public static List<String> modified = new ArrayList<>();
-    public static List<String> deleted = new ArrayList<>();
-    public static List<String> restFiles = new ArrayList<>(); // Untracked files
-
     /**
      * traverse the commit treemap or addStaging treemap to check modified files
      * & deleted files
@@ -461,5 +472,25 @@ public class Repository {
             Collections.sort(list);
         }
     }
+
+    /**
+     * Usage: java gitlet.Main rm-branch [branch name]
+     * Delete the branch, not delete any commit, just the pointer of branch
+     * @param branchName the branch that need to be deleted
+     */
+    public static void rmBranch(String branchName) {
+        deleteBranchByName(branchName);
+    }
+
+    /**
+     * Usage: java gitlet.Main reset [commit id]
+     * @param commitId
+     */
+    public static void reset(String commitId) throws IOException {
+        Commit changeTo = getCommitByHashId(commitId);
+        switchCwd1To2(getHEAD(), changeTo, getCurBranchName());
+        updateBranch(changeTo);
+    }
+
 
 }

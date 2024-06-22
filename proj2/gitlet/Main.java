@@ -15,7 +15,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         // when args is empty
         if (args.length == 0) {
-            Utils.error("Must have at least one argument");
+            throw Utils.error("Must have at least one argument"); // TODO: why do this not sout a message directly??
         }
 
         String firstArg = args[0];
@@ -45,7 +45,7 @@ public class Main {
             case "branch":
                 branch(args[1]);
                 break;
-            case "checkout":
+            case "checkout": // TODO:  [commit id] may be abbreviated as for checkout
                 if (args[1].equals("--")){
                     checkout(args[2]);
                 } else if (args.length == 4 && args[2].equals("--")) {
@@ -56,6 +56,16 @@ public class Main {
                 break;
             case "status":
                 status();
+                break;
+            case"rm-branch":
+                if (args.length >= 2) {
+                    rmBranch(args[1]);
+                } else {
+                    System.out.println("Need branch name");
+                }
+                break;
+            case"reset":
+                reset(args[1]);
                 break;
             default:
                 System.out.println("Unknown command: " + firstArg);

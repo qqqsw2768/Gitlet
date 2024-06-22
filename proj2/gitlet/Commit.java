@@ -56,7 +56,6 @@ public class Commit implements Serializable {
         this.timestamp = timestamp;
         this.parentList = parentList;
         this.nameToBlob = nameToBlob;
-//        this.branchName = branchName;
     }
 
     public Commit(String message) {
@@ -117,7 +116,7 @@ public class Commit implements Serializable {
      * @param commit
     */
     public static void updateBranch(Commit commit){
-        File filePath = new File(BRANCH_DIR, getCurBracnchName());
+        File filePath = new File(BRANCH_DIR, getCurBranchName());
         if (filePath == null) {
             System.out.println();
         }
@@ -138,7 +137,7 @@ public class Commit implements Serializable {
     /**
      * @return current branch's (HEAD point to) name
      */
-    public static String getCurBracnchName() {
+    public static String getCurBranchName() {
         String name = readContentsAsString(CUR_BRANCH);
         return name;
     }
@@ -151,7 +150,7 @@ public class Commit implements Serializable {
      * Print all branches' name, head first marked by *
      */
     public static void printBranchName() {
-        String head = getCurBracnchName();
+        String head = getCurBranchName();
         List<String> allBranch = Utils.plainFilenamesIn(BRANCH_DIR);
         System.out.println("=== Branches ===");
         System.out.println("*" + head);
@@ -197,7 +196,6 @@ public class Commit implements Serializable {
 
     /**
      * Get branch pointer(a commit object) by its name
-     * @param branchName
      * @return Commit
      */
     public static Commit getBranchByName(String branchName) {
@@ -207,6 +205,25 @@ public class Commit implements Serializable {
             System.exit(0);
         }
         return readObject(pointer, Commit.class);
+    }
+
+    /**
+     * Delete branch by its name, cannot delete the current branch
+     * @param branchName
+     */
+    public static void deleteBranchByName(String branchName) {
+        File pointer = new File(BRANCH_DIR, branchName);
+        if (branchName.equals(getCurBranchName())) {
+            System.out.println("Cannot remove the current branch.");
+            System.exit(0);
+        }
+
+        if (!pointer.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        pointer.delete();
     }
 
     /**
