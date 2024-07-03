@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static gitlet.Commit.*;
+import static gitlet.Blob.*;
 import static gitlet.StagingArea.*;
 import static gitlet.Utils.*;
 
@@ -54,7 +55,7 @@ public class Repository {
     public static List<String> stagedFilesAdd = new ArrayList<>();
     public static List<String> stagedFilesRm = new ArrayList<>();
     public static List<String> modified = new ArrayList<>();
-    public static List<String> deleted = new ArrayList<>();
+    public static List<String> deleted = new ArrayList<>(); //  The tracked files but be used the command `rm`
     public static List<String> restFiles = new ArrayList<>(); // Untracked files
 
     /** Creates a new Gitlet version-control system in the current directory.
@@ -102,18 +103,30 @@ public class Repository {
         return true;
     }
 
+    public static void ifInitialize() {
+        if (!GITLET_DIR.exists()) {
+            System.out.println("Not in an initialized Gitlet directory.");
+            System.exit(0);
+        }
+    }
+
     /**
      * The command: add
      * Add file to stagingArea
      * @param fileName
      */
-    public static void add(String fileName) {
+    public static void add(String fileName) throws IOException {
         File fileToAdd = new File(fileName);
+
+        if (deleteBlobInRm(fileName)) {
+            getHEAD().makeFileFromBlob(fileName);
+            return;
+        }
 
         /** if the file not exits, escape */
         if (!fileToAdd.exists()) {
-            System.out.println("The file is not existed.");
-            return;
+            System.out.println("File does not exist.");
+            System.exit(0);
         }
 
         // make new blob
@@ -129,8 +142,6 @@ public class Repository {
             writeObject(ADD, oldSa);
         }
 
-        //TODO let stagingArea persistence be stagingArea place
-        // persist the object of blob and stagingArea
         blob.saveBlob();
     }
 
@@ -144,7 +155,8 @@ public class Repository {
         StagingArea addtionStage = StagingArea.getStageFromFile("add");
         StagingArea removalStage = StagingArea.getStageFromFile("rm");
 
-        if (addtionStage == null && removalStage == null) {
+        if ((addtionStage == null || addtionStage.isStageEmpty()) &&
+                (removalStage == null || removalStage.isStageEmpty())) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -188,6 +200,9 @@ public class Repository {
         clearStage();
     }
 
+    public static void mergeCommit() {
+
+    }
     /**
      * The command: rm
      *
@@ -195,33 +210,27 @@ public class Repository {
      */
     public static void rm(String fileName) {
         int flag = 0;
-        StagingArea addtionStage = getStageFromFile("add");
         File fileCWD = new File(fileName);
+        Commit commit = getHEAD();
 
         //  Check if there is key in Addition stage/ CURRENT COMMIT that need to be removed from rm
-        TreeMap<String, String> commit = getHEAD().getNameToBlob();
-        if (addtionStage != null) {
-            TreeMap<String,String> addition = addtionStage.getFileToBlobMap();
-            if (addition.containsKey(fileName)) {
-                Blob.deleteBlobInStage(addtionStage, fileName); // delete the blob
-                addition.remove(fileName);
-                flag = 1;
-            }
+        if (deleteBlobInADD(fileName)) { // delete the blob in addition Stage
+            flag = 1;
+            return;
         }
 
-        if (commit.containsKey(fileName)) { // if file is tracked by current commit, then add it to rmStage & delete it
-            String hashId = commit.get(fileName);
+        if (commit.containsFile(fileName)) { // if file is tracked by current commit, then add it to rmStage & delete it
+            String hashId = commit.getValueInMap(fileName);
             StagingArea rmStage = getStageFromFile("rm");
             if (rmStage == null) {
-                StagingArea stagingArea = newStageRm(hashId);
-                writeObject(RM, stagingArea);
+                newStageRm(hashId);
             } else {
                 rmStage.addStageRm(hashId);
                 writeObject(RM, rmStage);
             }
 
-            if (!Utils.restrictedDelete(fileCWD)) {
-                System.out.println("Delete file failed.");
+            if (fileCWD.exists()) {
+                Utils.restrictedDelete(fileCWD);
             }
         }
         else if (flag == 0){
@@ -260,11 +269,17 @@ public class Repository {
      */
     public static void find(String msg) {
         List<String> allCommit = Utils.plainFilenamesIn(COMMIT_DIR);
+        int findAtleast1 = 0;
         for(String i: allCommit) {
             Commit curCommit = getCommitByHashId(i);
             if(curCommit.getMessage().contains(msg)) {
                 System.out.println(curCommit.getHashId());
+                findAtleast1++;
             }
+        }
+
+        if (findAtleast1 == 0) {
+            System.out.println("Found no commit with that message.");
         }
     }
 
@@ -289,7 +304,7 @@ public class Repository {
     public static void checkout(String fileName) throws IOException {
         Commit curCommit = getHEAD();
         curCommit.makeFileFromBlob(fileName);
-        deleteFileInADD(fileName);
+        deleteBlobInADD(fileName);
     }
 
     /**
@@ -305,7 +320,7 @@ public class Repository {
     public static void checkout(String commitId, String fileName) throws IOException {
         Commit commit = getCommitByHashId(commitId);
         commit.makeFileFromBlob(fileName);
-        deleteFileInADD(fileName);
+        deleteBlobInADD(fileName);
     }
 
     /**
@@ -351,6 +366,11 @@ public class Repository {
         printStatus();
     }
 
+    /**
+     * Check if the 5 lists are empty, and if they are not, it means that
+     * the type of special files corresponding to the list name exists.
+     * eg: stagedFilesAdd list
+     */
     public static void checkStatus() {
         restFiles = new ArrayList<>(Utils.plainFilenamesIn(CWD));
         List<String> rm = null;
@@ -492,5 +512,188 @@ public class Repository {
         updateBranch(changeTo);
     }
 
+    /**
+     * merge!!
+     * Merge every files exits in 3 commits: HEAD, Other Branch's Active Head, Split Point
+     * @param branchName
+     */
+    public static void merge(String branchName) throws IOException {
+        boolean conflictFlag = false;
+        if (getCurBranchName() == branchName) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
+
+        checkStatus();
+        if (!stagedFilesAdd.isEmpty() || !stagedFilesRm.isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+
+        if (!restFiles.isEmpty()) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+
+        Commit splitPoint = getSplitPoint(branchName);
+        Commit branchHead = getBranchByName(branchName);
+
+        TreeMap<String, String> allFiles = new TreeMap<>();
+
+        TreeMap<String, String> splitMap = splitPoint.getNameToBlob();
+        TreeMap<String, String> otherBranchMap = branchHead.getNameToBlob();
+        TreeMap<String, String> headMap = getHEAD().getNameToBlob();
+
+        if (splitMap.equals(otherBranchMap)) {
+            message("Given branch is an ancestor of the current branch.");
+            if (getHEAD().equals(splitPoint)) { // fast-forwarded
+                checkoutBranch(branchName);
+                setHEAD(branchHead, getCurBranchName());
+                rmBranch(branchName);
+                message("Current branch fast-forwarded.");
+            }
+            System.exit(0);
+        }
+
+        allFiles.putAll(splitMap);
+        allFiles.putAll(otherBranchMap);
+        allFiles.putAll(headMap);
+
+        TreeMap<String, String> newMap = new TreeMap<>();
+
+        for (String fileName : allFiles.keySet()) {
+            boolean inSplit = splitMap.containsKey(fileName);
+            boolean inHead = headMap.containsKey(fileName);
+            boolean inOther = otherBranchMap.containsKey(fileName);
+
+            boolean modifiedOther = isModified(fileName, splitMap, otherBranchMap);
+            boolean modifiedHead = isModified(fileName, splitMap, headMap);
+
+            if (inSplit) {
+                if (inHead && inOther && !modifiedHead && modifiedOther) { // split: A; HEAD:A; other:!A -- !A
+                    newMap.put(fileName, otherBranchMap.get(fileName));
+                    addInMerge(headMap.get(fileName));
+                    continue;
+                } else if (inHead && inOther && modifiedHead && !modifiedOther) { // split: B; HEAD:!B; other:B -- !B
+                    newMap.put(fileName, headMap.get(fileName));
+                    continue;
+                } else if (inHead && !inOther && !modifiedHead) { // split: D; HEAD:D; other:X -- X
+                    rm(fileName);
+                    continue;
+                }
+            } else {
+                if (!inHead && inOther) { // split: X; HEAD:X; other:F -- F
+                    newMap.put(fileName, otherBranchMap.get(fileName));
+                    addInMerge(otherBranchMap.get(fileName));
+                    continue;
+                } else if (inHead && !inOther) {
+                    newMap.put(fileName, headMap.get(fileName));
+                    continue;
+                }
+            }
+
+            if (inHead && inOther && isModified(fileName, headMap, otherBranchMap) // Conflict
+                    || inSplit && !inHead && inOther && modifiedOther
+                    || inSplit && inHead && !inOther && modifiedHead) {
+                String blobId = makeConflictFile(fileName, headMap, otherBranchMap);
+                newMap.put(fileName, blobId);
+                conflictFlag = true;
+            } else if (!isModified(fileName, headMap, otherBranchMap)) { // modified in same way
+                newMap.put(fileName, headMap.get(fileName));
+            }
+        }
+
+        commitInMerge(branchName, newMap);
+
+        if (conflictFlag) {
+            message("Encountered a merge conflict.");
+        }
+    }
+
+    /**
+     * Check the blob if is different from the split point
+     * @return Is modified: ture; Not modified: false
+     */
+    public static boolean isModified(String fileName, TreeMap<String, String> split, TreeMap<String, String> curMap) {
+        String blobIdInSplit = split.get(fileName);
+        String blobIdInCurMap = curMap.get(fileName);
+        if (blobIdInCurMap == null || blobIdInSplit == null) {
+            return false;
+        }
+        if (getBlobContent(blobIdInSplit).equals(getBlobContent(blobIdInCurMap))) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Add file to stagingArea using by merge command
+     * @param
+     */
+    public static void addInMerge(String value) {
+        StagingArea oldSa = getStageFromFile("add");
+        Blob blob = getBlobByHashId(value);
+
+        if (oldSa == null) {
+            StagingArea stagingArea = new StagingArea(blob);
+            writeObject(ADD, stagingArea);
+        } else {
+            oldSa.addStageAdd(blob);
+            writeObject(ADD, oldSa);
+        }
+
+        blob.saveBlob();
+    }
+
+    public static void commitInMerge(String branchName,  TreeMap<String, String> map) throws IOException {
+        String timestamp = dateFormat(new Date());
+
+
+        // update parent list
+        List<String> parentList = new ArrayList<>();
+        parentList.add(getHEAD().getHashId());
+        parentList.add(getBranchByName(branchName).getHashId());
+
+        String msg = "Merged " + branchName + " into " + getCurBranchName();
+        // hash everything except the hashId itself
+        String hashId = Utils.sha1(msg, timestamp, map.toString(), parentList.toString());
+        Commit commit = new Commit(msg, hashId, timestamp, parentList, map);
+
+        // update HEAD & curBranch's active pointer
+        setHEAD(commit, getCurBranchName());
+        updateBranch(commit);
+        rmBranch(branchName);
+
+        commit.saveCommit();
+    }
+
+    /**
+     * Merge the files into a new file in CWD
+     * @param filename the file need to be merged
+     * @param curMap Current head map
+     * @param givenMap Given branch map
+     * @return the new file's blob hashID
+     */
+    public static String makeConflictFile(String filename, TreeMap<String, String> curMap, TreeMap<String, String> givenMap) throws IOException {
+        File newFile = new File(CWD, filename);
+
+        if (!newFile.exists()) {
+            newFile.createNewFile();
+        }
+
+        if (!curMap.containsKey(filename)) {
+            writeContents(newFile, "<<<<<<< HEAD\n", "=======\n", getBlobContent(givenMap.get(filename)), ">>>>>>>");
+        } else if (!givenMap.containsKey(filename)) {
+            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename)), "=======\n",  ">>>>>>>");
+        } else {
+            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename)), "=======\n",  getBlobContent(givenMap.get(filename)), ">>>>>>>");
+        }
+
+        Blob newBlob = new Blob(newFile);
+        newBlob.saveBlob();
+        return newBlob.getHashId();
+    }
+
 
 }
+

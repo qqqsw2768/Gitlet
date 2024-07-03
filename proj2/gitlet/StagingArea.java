@@ -42,10 +42,10 @@ public class StagingArea implements Serializable {
      * Get blob object by hashId, Deserialization
      * @return a Blob object
      */
-    public static StagingArea newStageRm(String hashId) {
-        File file = new File(BLOB_DIR, hashId);
-        Blob blob = readObject(file, Blob.class);
-        return new StagingArea(blob);
+    public static void newStageRm(String hashId) {
+        Blob blob = Blob.getBlobByHashId(hashId);
+        StagingArea sa = new StagingArea(blob);
+        writeObject(RM, sa);
     }
 
     /**
@@ -53,8 +53,7 @@ public class StagingArea implements Serializable {
      * @return a Blob object
      */
     public StagingArea addStageRm(String hashId) {
-        File file = new File(BLOB_DIR, hashId);
-        Blob blob = readObject(file, Blob.class);
+        Blob blob = Blob.getBlobByHashId(hashId);
         this.fileToBlobMap.put(blob.getPlainName(), blob.getHashId());
         return this;
     }
@@ -91,7 +90,7 @@ public class StagingArea implements Serializable {
      * @return
      */
     public boolean isStageEmpty() {
-        return this.fileToBlobMap.isEmpty();
+            return this.fileToBlobMap.isEmpty();
     }
 
     /**
@@ -103,18 +102,63 @@ public class StagingArea implements Serializable {
     }
 
     /**
-     * Clear special file in addition staging if exists
+     * 1. Delete the mapping :fileName --- blob id in addition staging if exists
+     * 2. Then delete the blob file in blob_dir
+     * 3. Serialize the new stagingArea object
      * @param fileName
      */
-    public static void deleteFileInADD(String fileName) {
-        StagingArea stagingArea = getStageFromFile("add");
-        if (stagingArea != null) {
-            TreeMap<String, String> map = stagingArea.getFileToBlobMap();
-            if (map.containsKey(fileName)) {
-                Blob.deleteBlobInStage(stagingArea, fileName);
-                map.remove(fileName);
+    public static boolean deleteBlobInADD(String fileName) {
+        StagingArea sA = getStageFromFile("add");
+        if (sA != null) {
+            if (sA.containsFile(fileName)) {
+                sA.deleteBlob(fileName);
+                writeObject(ADD, sA);
+                return true;
             }
         }
+        return false;
+    }
+
+    /**
+     * the rm stage like above
+     * @param fileName
+     * @return
+     */
+    public static boolean deleteBlobInRm(String fileName) {
+        StagingArea sA = getStageFromFile("rm");
+        if (sA != null) {
+            if (sA.containsFile(fileName)) {
+                sA.deleteBlobMapping(fileName);
+                writeObject(RM, sA);
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * Delete the mapping and delete the blob file
+     * @param fileName
+     */
+    public void deleteBlob(String fileName) {
+        String hashId = fileToBlobMap.get(fileName);
+        fileToBlobMap.remove(fileName);
+        File file = new File(BLOB_DIR, hashId);
+        file.delete();
+    }
+
+    /**
+     * Delete the mapping, only mapping!!
+     * @param fileName
+     */
+    public void deleteBlobMapping(String fileName) {
+        fileToBlobMap.remove(fileName);
+    }
+
+
+    public boolean containsFile(String fileName) {
+        return fileToBlobMap.containsKey(fileName);
     }
 
     public TreeMap<String, String> getFileToBlobMap() {

@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static gitlet.Blob.getBlobByHashId;
 import static gitlet.Repository.*;
 import static gitlet.Utils.*;
 
@@ -39,9 +40,6 @@ public class Commit implements Serializable {
     /** The mapping stores fileName <--> blobName */
     private TreeMap<String, String> nameToBlob = new TreeMap<>();
 
-    /** Store this commit belong to which branch */
-//    private String branchName;
-
     /**
      *
      * @param message
@@ -60,6 +58,27 @@ public class Commit implements Serializable {
 
     public Commit(String message) {
         this.message = message;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        // 如果传入的对象为 null 或者不是同一类型，返回 false
+        if (o == null || getClass() != o.getClass()) return false;
+        Commit commit = (Commit) o;
+
+        // 比较对象的每个属性
+        return Objects.equals(message, commit.message) &&
+                Objects.equals(parentList, commit.parentList) &&
+                Objects.equals(hashId, commit.hashId) &&
+                Objects.equals(timestamp, commit.timestamp) &&
+                Objects.equals(nameToBlob, commit.nameToBlob);
+    }
+
+    @Override
+    public int hashCode() {
+        // 使用 Objects.hash 方法生成哈希码
+        return Objects.hash(message, parentList, hashId, timestamp, nameToBlob);
     }
 
     /**
@@ -174,8 +193,13 @@ public class Commit implements Serializable {
     public void printCommit() {
         //TODO for merge commits
         // merge: a b (2 parent)
+        parentList = this.getParentList();
         System.out.println("===");
         System.out.println("commit " + this.getHashId());
+        if (parentList.size() >= 2) {
+            System.out.print("Merge: " + parentList.get(0).substring(0, 7));
+            System.out.println(" " +  parentList.get(1).substring(0, 7));
+        }
         System.out.println("Date: " + this.getTimestamp());
         System.out.println(this.getMessage());
         System.out.println();
@@ -190,6 +214,7 @@ public class Commit implements Serializable {
         File commit = new File(COMMIT_DIR, hashId);
         if (!commit.exists()) {
             System.out.println("No commit with that id exists.");
+            System.exit(0);
         }
         return readObject(commit, Commit.class);
     }
@@ -241,16 +266,6 @@ public class Commit implements Serializable {
     }
 
     /**
-     * Deserialize the blob
-     * @param blobId
-     * @throws IOException
-     */
-    public static Blob getBlobByHashId(String blobId) {
-        File filePath = new File(BLOB_DIR, blobId);
-        return readObject(filePath, Blob.class);
-    }
-
-    /**
      * Takes all files in one commit and put them to CWD
      * @throws IOException
      */
@@ -281,6 +296,45 @@ public class Commit implements Serializable {
         if (commitMap.containsKey(fileName) && commitId.equals(blobId)) { // no modified in current commit
             System.exit(0);
         }
+    }
+
+    /**
+     * Get the split point
+     * @param branchHead The name of the branch that need to be merged
+     * @return the Commit object points to the `split point`
+     */
+    public static Commit getSplitPoint(String branchHead) {
+        List<String> curList = new ArrayList<>();
+
+        Commit curCommit = getHEAD();
+        String initial = Utils.sha1();
+
+        // record the current branch's commit
+        while (!curCommit.getHashId().equals(initial)) {
+            curList.add(curCommit.getHashId());
+            curCommit = curCommit.getFirstParent();
+        }
+        curList.add(curCommit.getHashId());
+
+        Commit branchCommit = getBranchByName(branchHead);
+
+        for (int i = 0; i < curList.size(); i++) {
+            String commitId = branchCommit.getHashId();
+            if (curList.contains(commitId)) {
+                return getCommitByHashId(commitId);
+            }
+            branchCommit = branchCommit.getFirstParent();
+        }
+
+        return null;
+    }
+
+    public boolean containsFile(String fileName) {
+        return nameToBlob.containsKey(fileName);
+    }
+
+    public String getValueInMap(String key) {
+        return nameToBlob.get(key);
     }
 
     public String getMessage() {

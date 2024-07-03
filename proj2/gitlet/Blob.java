@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.TreeMap;
 
-import static gitlet.Repository.BLOB_DIR;
-import static gitlet.Repository.CWD;
+import static gitlet.Repository.*;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet blob object.
@@ -46,18 +45,6 @@ public class Blob implements Serializable {
     }
 
     /**
-     * Delete the blob in the stagingArea by it's mapping fileName
-     * @param fileName
-     */
-    public static void deleteBlobInStage(StagingArea stagingArea, String fileName) {
-        TreeMap<String,String> treeMap = stagingArea.getFileToBlobMap();
-        String hashId = treeMap.get(fileName);
-        System.out.println(hashId);
-        File file = join(BLOB_DIR, hashId);
-        file.delete();
-    }
-
-    /**
      * Deserialization
      * Let the blob reverse to file --- make a new file
      * @throws IOException
@@ -71,6 +58,25 @@ public class Blob implements Serializable {
             writeContents(file, this.getPlainContent());
         }
     }
+
+    /**
+     * Get Blob's content by it's ID
+     */
+    public static String getBlobContent(String bolbId) {
+        Blob blob = getBlobByHashId(bolbId);
+        return blob.getPlainContent();
+    }
+
+    /**
+     * Deserialize the blob
+     * @param blobId
+     * @throws IOException
+     */
+    public static Blob getBlobByHashId(String blobId) {
+        File filePath = new File(BLOB_DIR, blobId);
+        return readObject(filePath, Blob.class);
+    }
+
 
     public String getHashId() {
         return hashId;
