@@ -162,8 +162,9 @@ public class Repository {
         }
 
         String timestamp = dateFormat(new Date());
+        Commit curCommit = getHEAD();
 
-        TreeMap<String, String> nameToBlobMap = getHEAD().getNameToBlob();// get old commit's map
+        TreeMap<String, String> nameToBlobMap = curCommit.getNameToBlob();// get old commit's map
 
         // remove mapping in the removal stage
         if (removalStage != null) {
@@ -358,6 +359,7 @@ public class Repository {
         setHEAD(second, branchName);
     }
 
+
     /**
      * The command: status
      */
@@ -546,13 +548,15 @@ public class Repository {
 
         if (splitMap.equals(otherBranchMap)) {
             message("Given branch is an ancestor of the current branch.");
-            if (getHEAD().equals(splitPoint)) { // fast-forwarded
-                checkoutBranch(branchName);
-                setHEAD(branchHead, getCurBranchName());
-                rmBranch(branchName);
-                message("Current branch fast-forwarded.");
-            }
             System.exit(0);
+        }
+
+        if (getHEAD().equals(splitPoint)) { // fast-forwarded
+            String master = getCurBranchName();
+            checkoutBranch(branchName);
+            setHEAD(branchHead, master);
+            updateBranch(branchHead);
+            message("Current branch fast-forwarded.");
         }
 
         allFiles.putAll(splitMap);
@@ -572,7 +576,7 @@ public class Repository {
             if (inSplit) {
                 if (inHead && inOther && !modifiedHead && modifiedOther) { // split: A; HEAD:A; other:!A -- !A
                     newMap.put(fileName, otherBranchMap.get(fileName));
-                    addInMerge(headMap.get(fileName));
+//                    addInMerge(headMap.get(fileName));
                     continue;
                 } else if (inHead && inOther && modifiedHead && !modifiedOther) { // split: B; HEAD:!B; other:B -- !B
                     newMap.put(fileName, headMap.get(fileName));
@@ -584,7 +588,7 @@ public class Repository {
             } else {
                 if (!inHead && inOther) { // split: X; HEAD:X; other:F -- F
                     newMap.put(fileName, otherBranchMap.get(fileName));
-                    addInMerge(otherBranchMap.get(fileName));
+//                    addInMerge(otherBranchMap.get(fileName));
                     continue;
                 } else if (inHead && !inOther) {
                     newMap.put(fileName, headMap.get(fileName));
@@ -598,12 +602,16 @@ public class Repository {
                 String blobId = makeConflictFile(fileName, headMap, otherBranchMap);
                 newMap.put(fileName, blobId);
                 conflictFlag = true;
-            } else if (!isModified(fileName, headMap, otherBranchMap)) { // modified in same way
+            } else if (modifiedHead && modifiedOther && !isModified(fileName, headMap, otherBranchMap)) { // modified in same way
                 newMap.put(fileName, headMap.get(fileName));
             }
         }
 
-        commitInMerge(branchName, newMap);
+        Commit mergeCommit = commitInMerge(branchName, newMap);
+        deleteAllFilesFrom(getHEAD());
+        createAllFilesFrom(mergeCommit);
+        setHEAD(mergeCommit, getCurBranchName());
+        updateBranch(mergeCommit);
 
         if (conflictFlag) {
             message("Encountered a merge conflict.");
@@ -645,7 +653,7 @@ public class Repository {
         blob.saveBlob();
     }
 
-    public static void commitInMerge(String branchName,  TreeMap<String, String> map) throws IOException {
+    public static Commit commitInMerge(String branchName,  TreeMap<String, String> map) throws IOException {
         String timestamp = dateFormat(new Date());
 
 
@@ -660,11 +668,9 @@ public class Repository {
         Commit commit = new Commit(msg, hashId, timestamp, parentList, map);
 
         // update HEAD & curBranch's active pointer
-        setHEAD(commit, getCurBranchName());
-        updateBranch(commit);
-        rmBranch(branchName);
 
         commit.saveCommit();
+        return commit;
     }
 
     /**
@@ -675,18 +681,18 @@ public class Repository {
      * @return the new file's blob hashID
      */
     public static String makeConflictFile(String filename, TreeMap<String, String> curMap, TreeMap<String, String> givenMap) throws IOException {
-        File newFile = new File(CWD, filename);
+        File newFile = new File(filename);
 
         if (!newFile.exists()) {
             newFile.createNewFile();
         }
 
         if (!curMap.containsKey(filename)) {
-            writeContents(newFile, "<<<<<<< HEAD\n", "=======\n", getBlobContent(givenMap.get(filename)), ">>>>>>>");
+            writeContents(newFile, "<<<<<<< HEAD\n", "=======\n", getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
         } else if (!givenMap.containsKey(filename)) {
-            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename)), "=======\n",  ">>>>>>>");
+            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename)), "=======\n",  ">>>>>>>\n");
         } else {
-            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename)), "=======\n",  getBlobContent(givenMap.get(filename)), ">>>>>>>");
+            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename)), "=======\n",  getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
         }
 
         Blob newBlob = new Blob(newFile);

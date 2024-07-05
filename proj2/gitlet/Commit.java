@@ -275,6 +275,7 @@ public class Commit implements Serializable {
             getBlobByHashId(hashId).newFileFromBlob();
         }
     }
+
     public static void deleteAllFilesFrom(Commit commit) {
         TreeMap<String, String> treeMap = commit.getNameToBlob();
         for (String i : treeMap.keySet()) {

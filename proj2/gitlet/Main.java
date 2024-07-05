@@ -15,7 +15,8 @@ public class Main {
     public static void main(String[] args) {
         // when args is empty
         if (args.length == 0) {
-            throw Utils.error("Must have at least one argument");
+            System.out.println("Please enter a command.");
+            System.exit(0);
         }
 
         String firstArg = args[0];
@@ -113,7 +114,7 @@ public class Main {
                 }
                 break;
             default:
-                System.out.println("Unknown command: " + firstArg);
+                System.out.println("No command with that name exists.");
                 break;
         }
     }

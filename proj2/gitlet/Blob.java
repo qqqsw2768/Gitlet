@@ -50,13 +50,11 @@ public class Blob implements Serializable {
      * @throws IOException
      */
     public void newFileFromBlob() throws IOException {
-        File file = new File(CWD, this.getPlainName());
-        if (file.exists()) {
-            writeContents(file, this.getPlainContent());
-        } else {
+        File file = new File(this.getPlainName()); // delete the cwd
+        if (!file.exists()) {
             file.createNewFile();
-            writeContents(file, this.getPlainContent());
         }
+        writeContents(file, this.getPlainContent());
     }
 
     /**
