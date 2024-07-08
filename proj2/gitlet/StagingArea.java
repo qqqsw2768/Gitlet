@@ -70,7 +70,7 @@ public class StagingArea implements Serializable {
         if (stagePath.equals("add") && !add.isEmpty()) {
             stagingArea = readObject(ADD, StagingArea.class);
         } else if (stagePath.equals("rm") && !rm.isEmpty()) {
-            stagingArea = readObject(Repository.RM, StagingArea.class);
+            stagingArea = readObject(RM, StagingArea.class);
         }
         return stagingArea;
     }

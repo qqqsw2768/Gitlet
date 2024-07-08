@@ -357,6 +357,7 @@ public class Repository {
         createAllFilesFrom(second);
 
         setHEAD(second, branchName);
+        clearStatusList();
     }
 
     /**
@@ -369,8 +370,8 @@ public class Repository {
         if (!untracked.isEmpty()) {
             for (String i : untracked) {
                 if (checkout.containsKey(i)) {
-                    message("There is an untracked file in the way;" +
-                            " delete it, or add and commit it first.");
+                    message("There is an untracked file in the way;"
+                            + " delete it, or add and commit it first.");
                     System.exit(0);
                 }
             }
@@ -383,6 +384,15 @@ public class Repository {
     public static void status() {
         checkStatus();
         printStatus();
+        clearStatusList();
+    }
+
+    public static void clearStatusList() {
+        stagedFilesAdd.clear();
+        stagedFilesRm.clear();
+        modified.clear();
+        deleted.clear();
+        restFiles.clear();
     }
 
     /**
@@ -419,7 +429,8 @@ public class Repository {
     }
 
     private static void getRmList() {
-        StagingArea stagingArea = getStageFromFile("rm");
+        StagingArea stagingArea = StagingArea.getStageFromFile("rm");
+
         if (stagingArea != null) {
             TreeMap<String, String> treeMap = stagingArea.getFileToBlobMap();
             for (String i : treeMap.keySet()) {
@@ -623,6 +634,7 @@ public class Repository {
         if (conflictFlag) {
             message("Encountered a merge conflict.");
         }
+        clearStage();
     }
 
     private static void checkWarning(String givenBranch) {
@@ -646,18 +658,19 @@ public class Repository {
         }
 
         if (!restFiles.isEmpty()) {
-            System.out.println("There is an untracked file in the way;" +
-                    " delete it, or add and commit it first.");
+            System.out.println("There is an untracked file in the way;"
+                    + " delete it, or add and commit it first.");
             System.exit(0);
         }
+        clearStatusList();
     }
 
     /**
      * Check the blob if is different from the split point
      * @return Is modified: ture; Not modified: false
      */
-    public static boolean isModified(String fileName, TreeMap<String, String> split
-            , TreeMap<String, String> curMap) {
+    public static boolean isModified(String fileName, TreeMap<String, String> split,
+                                     TreeMap<String, String> curMap) {
         String blobIdInSplit = split.get(fileName);
         String blobIdInCurMap = curMap.get(fileName);
         if (blobIdInCurMap == null || blobIdInSplit == null) {
@@ -715,8 +728,8 @@ public class Repository {
      * @param givenMap Given branch map
      * @return the new file's blob hashID
      */
-    public static String makeConflictFile(String filename, TreeMap<String
-            , String> curMap, TreeMap<String, String> givenMap) throws IOException {
+    public static String makeConflictFile(String filename, TreeMap<String, String> curMap,
+                                          TreeMap<String, String> givenMap) throws IOException {
         File newFile = new File(filename);
 
         if (!newFile.exists()) {
@@ -724,14 +737,14 @@ public class Repository {
         }
 
         if (!curMap.containsKey(filename)) {
-            writeContents(newFile, "<<<<<<< HEAD\n", "=======\n"
-                    , getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
+            writeContents(newFile, "<<<<<<< HEAD\n", "=======\n",
+                    getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
         } else if (!givenMap.containsKey(filename)) {
-            writeContents(newFile, "<<<<<<< HEAD\n"
-                    , getBlobContent(curMap.get(filename)), "=======\n",  ">>>>>>>\n");
+            writeContents(newFile, "<<<<<<< HEAD\n",
+                    getBlobContent(curMap.get(filename)), "=======\n",  ">>>>>>>\n");
         } else {
-            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename))
-                    , "=======\n",  getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
+            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename)),
+                    "=======\n",  getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
         }
 
         Blob newBlob = new Blob(newFile);
