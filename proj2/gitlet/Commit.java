@@ -305,29 +305,37 @@ public class Commit implements Serializable {
      * @return the Commit object points to the `split point`
      */
     public static Commit getSplitPoint(String branchHead) {
-        List<String> curList = new ArrayList<>();
+        Integer minLen = Integer.MAX_VALUE;
+        String minId = "";
 
-        Commit curCommit = getHEAD();
-        String initial = Utils.sha1();
+        Map<String, Integer> headMap = caculateCommitMap(getHEAD(), 0);
+        Map<String, Integer> otherMap = caculateCommitMap(getBranchByName(branchHead), 0);
 
-        // record the current branch's commit
-        while (!curCommit.getHashId().equals(initial)) {
-            curList.add(curCommit.getHashId());
-            curCommit = curCommit.getFirstParent();
-        }
-        curList.add(curCommit.getHashId());
-
-        Commit branchCommit = getBranchByName(branchHead);
-
-        for (int i = 0; i < curList.size(); i++) {
-            String commitId = branchCommit.getHashId();
-            if (curList.contains(commitId)) {
-                return getCommitByHashId(commitId);
+        for (String id : otherMap.keySet()) {
+            if (headMap.containsKey(id) && headMap.get(id) < minLen) {
+                minLen = headMap.get(id);
+                minId = id;
             }
-            branchCommit = branchCommit.getFirstParent();
         }
+        return getCommitByHashId(minId);
+    }
 
-        return null;
+    /**
+     * Get all precious commit from one commit
+     */
+    private static Map<String, Integer> caculateCommitMap(Commit commit, int len) {
+        Map<String, Integer> map = new HashMap<>();
+        map.put(commit.getHashId(), len);
+
+        if (commit.getParentList().isEmpty()) {
+            return map;
+        }
+        len++;
+        for (String id : commit.getParentList()) {
+            Commit parent = getCommitByHashId(id);
+            map.putAll(caculateCommitMap(parent, len));
+        }
+        return map;
     }
 
     public boolean containsFile(String fileName) {

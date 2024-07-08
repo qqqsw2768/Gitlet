@@ -348,10 +348,9 @@ public class Repository {
      */
     private static void switchCwd1To2(Commit first, Commit second, String branchName) throws IOException {
         checkStatus();
-        if (!restFiles.isEmpty() || !stagedFilesAdd.isEmpty() || !modified.isEmpty()) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            System.exit(0);
-        }
+        checkUntracked(second, restFiles);
+        checkUntracked(second, stagedFilesAdd);
+        checkUntracked(second, modified);
 
         deleteAllFilesFrom(first);
         createAllFilesFrom(second);
@@ -359,7 +358,22 @@ public class Repository {
         setHEAD(second, branchName);
     }
 
+    /**
+     * Check if the untracked files will be overwritten
+     * @param commit
+     */
+    private static void checkUntracked(Commit commit, List<String> untracked) {
+        Map<String, String> checkout = commit.getNameToBlob();
 
+        if (!untracked.isEmpty()) {
+            for (String i : untracked) {
+                if (checkout.containsKey(i)) {
+                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                    System.exit(0);
+                }
+            }
+        }
+    }
     /**
      * The command: status
      */
@@ -509,6 +523,7 @@ public class Repository {
      * @param commitId
      */
     public static void reset(String commitId) throws IOException {
+        clearStage();
         Commit changeTo = getCommitByHashId(commitId);
         switchCwd1To2(getHEAD(), changeTo, getCurBranchName());
         updateBranch(changeTo);
@@ -517,11 +532,17 @@ public class Repository {
     /**
      * merge!!
      * Merge every files exits in 3 commits: HEAD, Other Branch's Active Head, Split Point
-     * @param branchName
      */
-    public static void merge(String branchName) throws IOException {
+    public static void merge(String givenBranch) throws IOException {
+        File pointer = new File(BRANCH_DIR, givenBranch);
+        if (!pointer.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        String curBranch = getCurBranchName();
         boolean conflictFlag = false;
-        if (getCurBranchName() == branchName) {
+        if (curBranch.equals(givenBranch)) {
             System.out.println("Cannot merge a branch with itself.");
             System.exit(0);
         }
@@ -537,8 +558,8 @@ public class Repository {
             System.exit(0);
         }
 
-        Commit splitPoint = getSplitPoint(branchName);
-        Commit branchHead = getBranchByName(branchName);
+        Commit splitPoint = getSplitPoint(givenBranch);
+        Commit branchHead = getBranchByName(givenBranch);
 
         TreeMap<String, String> allFiles = new TreeMap<>();
 
@@ -552,11 +573,12 @@ public class Repository {
         }
 
         if (getHEAD().equals(splitPoint)) { // fast-forwarded
-            String master = getCurBranchName();
-            checkoutBranch(branchName);
-            setHEAD(branchHead, master);
+            String curCommit = getCurBranchName();
+            checkoutBranch(givenBranch);
+            setHEAD(branchHead, curCommit);
             updateBranch(branchHead);
             message("Current branch fast-forwarded.");
+            System.exit(0);
         }
 
         allFiles.putAll(splitMap);
@@ -607,7 +629,7 @@ public class Repository {
             }
         }
 
-        Commit mergeCommit = commitInMerge(branchName, newMap);
+        Commit mergeCommit = commitInMerge(givenBranch, newMap);
         deleteAllFilesFrom(getHEAD());
         createAllFilesFrom(mergeCommit);
         setHEAD(mergeCommit, getCurBranchName());
@@ -699,7 +721,5 @@ public class Repository {
         newBlob.saveBlob();
         return newBlob.getHashId();
     }
-
-
 }
 
