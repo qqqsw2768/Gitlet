@@ -11,15 +11,10 @@ import static gitlet.Repository.*;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object and some helper methods.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
- *
  *  @author qqqsw
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
-     *
      * List all instance variables of the Commit class here with a useful
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided one example for `message`.
@@ -48,7 +43,8 @@ public class Commit implements Serializable {
      * @param parentList
      * @param nameToBlob
      */
-    public Commit(String message, String hashId, String timestamp, List<String> parentList, TreeMap<String, String> nameToBlob) {
+    public Commit(String message, String hashId, String timestamp,
+                  List<String> parentList, TreeMap<String, String> nameToBlob) {
         this.message = message;
         this.hashId = hashId;
         this.timestamp = timestamp;
@@ -62,29 +58,33 @@ public class Commit implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        // 如果传入的对象为 null 或者不是同一类型，返回 false
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
         Commit commit = (Commit) o;
 
         // 比较对象的每个属性
-        return Objects.equals(message, commit.message) &&
-                Objects.equals(parentList, commit.parentList) &&
-                Objects.equals(hashId, commit.hashId) &&
-                Objects.equals(timestamp, commit.timestamp) &&
-                Objects.equals(nameToBlob, commit.nameToBlob);
+        return Objects.equals(message, commit.message)
+                && Objects.equals(parentList, commit.parentList)
+                && Objects.equals(hashId, commit.hashId)
+                && Objects.equals(timestamp, commit.timestamp)
+                && Objects.equals(nameToBlob, commit.nameToBlob);
     }
 
     @Override
     public int hashCode() {
-        // 使用 Objects.hash 方法生成哈希码
         return Objects.hash(message, parentList, hashId, timestamp, nameToBlob);
     }
 
     /**
      * Store the commit in COMMIT_DIR
      */
-    public void saveCommit(){
+    public void saveCommit() {
         File path = new File(COMMIT_DIR, this.getHashId());
         Utils.writeObject(path, this);
     }
@@ -119,7 +119,7 @@ public class Commit implements Serializable {
      */
     public static void setHEAD(Commit commit, String curBranch) throws IOException {
         setCurBranchName(curBranch);
-        writeObject(HEAD, commit);// save HEAD to the file of HEAD
+        writeObject(HEAD, commit); // save HEAD to the file of HEAD
     }
 
     /**
@@ -134,7 +134,7 @@ public class Commit implements Serializable {
      * Store in branchName/"name" file
      * @param commit
     */
-    public static void updateBranch(Commit commit){
+    public static void updateBranch(Commit commit) {
         File filePath = new File(BRANCH_DIR, getCurBranchName());
         if (filePath == null) {
             System.out.println();
@@ -191,8 +191,6 @@ public class Commit implements Serializable {
     }
 
     public void printCommit() {
-        //TODO for merge commits
-        // merge: a b (2 parent)
         parentList = this.getParentList();
         System.out.println("===");
         System.out.println("commit " + this.getHashId());
@@ -294,7 +292,8 @@ public class Commit implements Serializable {
         String blobId = blob.getHashId();
         String commitId = commitMap.get(fileName);
 
-        if (commitMap.containsKey(fileName) && commitId.equals(blobId)) { // no modified in current commit
+        // no modified in current commit
+        if (commitMap.containsKey(fileName) && commitId.equals(blobId)) {
             System.exit(0);
         }
     }

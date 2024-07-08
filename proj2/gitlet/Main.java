@@ -38,7 +38,7 @@ public class Main {
                 break;
             case "commit":
                 ifInitialize();
-                if (args.length < 2) {
+                if (args.length < 2 || args[1].trim().isEmpty()) {
                     System.out.println("Please enter a commit message.");
                     System.exit(0);
                 }

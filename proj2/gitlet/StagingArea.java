@@ -5,7 +5,6 @@ import java.io.Serializable;
 import java.util.TreeMap;
 
 import static gitlet.Repository.*;
-import static gitlet.Repository.BRANCH_DIR;
 import static gitlet.Utils.*;
 
 /**
@@ -33,7 +32,7 @@ public class StagingArea implements Serializable {
     }
 
     public StagingArea(Blob blob) {
-        TreeMap<String, String> treeMap= new TreeMap<>();
+        TreeMap<String, String> treeMap = new TreeMap<>();
         treeMap.put(blob.getPlainName(), blob.getHashId());
         this.fileToBlobMap = treeMap;
     }
@@ -77,20 +76,11 @@ public class StagingArea implements Serializable {
     }
 
     /**
-     * Get the treeMap from addStaging
-     * @param stagePath
-     * @return
-     */
-    public static TreeMap<String, String> getMapFrom(String stagePath) {
-        return getStageFromFile(stagePath).getFileToBlobMap();
-    }
-
-    /**
      * If the StageArea map is empty will return 1
      * @return
      */
     public boolean isStageEmpty() {
-            return this.fileToBlobMap.isEmpty();
+        return this.fileToBlobMap.isEmpty();
     }
 
     /**

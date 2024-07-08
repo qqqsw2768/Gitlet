@@ -15,10 +15,9 @@ import static gitlet.Utils.*;
  */
 public class Repository {
     /**
-     * TODO: add instance variables here.
      * List all instance variables of the Repository class here with a useful
      * comment above them describing what that variable represents and how that
-     * variable is used. We've provided two examples for you.
+     * variable is used.
      */
 
     /** The current working directory. */
@@ -52,11 +51,12 @@ public class Repository {
     public static final File CUR_BRANCH = join(GITLET_DIR, "CurBranch");
 
     /** the List that be used by checkIn */
-    public static List<String> stagedFilesAdd = new ArrayList<>();
-    public static List<String> stagedFilesRm = new ArrayList<>();
-    public static List<String> modified = new ArrayList<>();
-    public static List<String> deleted = new ArrayList<>(); //  The tracked files but be used the command `rm`
-    public static List<String> restFiles = new ArrayList<>(); // Untracked files
+    private static List<String> stagedFilesAdd = new ArrayList<>();
+    private static List<String> stagedFilesRm = new ArrayList<>();
+    private static List<String> modified = new ArrayList<>();
+    // The tracked files but be used the command `rm`
+    private static List<String> deleted = new ArrayList<>();
+    private static List<String> restFiles = new ArrayList<>(); // Untracked files
 
     /** Creates a new Gitlet version-control system in the current directory.
      * init current cwd:
@@ -74,7 +74,8 @@ public class Repository {
 
         List<String> parentList = new ArrayList<>();
 
-        Commit firstCommit = new Commit("initial commit", hash, timestamp, parentList, new TreeMap<>());
+        Commit firstCommit = new Commit("initial commit", hash,
+                timestamp, parentList, new TreeMap<>());
         firstCommit.saveCommit();
 
         Commit.newBranch("master", firstCommit);
@@ -96,7 +97,7 @@ public class Repository {
             ADD.createNewFile();
             RM.createNewFile();
         } else {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
+            message("A Gitlet version-control system already exists in the current directory.");
             return false;
         }
 
@@ -155,8 +156,8 @@ public class Repository {
         StagingArea addtionStage = StagingArea.getStageFromFile("add");
         StagingArea removalStage = StagingArea.getStageFromFile("rm");
 
-        if ((addtionStage == null || addtionStage.isStageEmpty()) &&
-                (removalStage == null || removalStage.isStageEmpty())) {
+        if ((addtionStage == null || addtionStage.isStageEmpty())
+                && (removalStage == null || removalStage.isStageEmpty())) {
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
@@ -164,7 +165,7 @@ public class Repository {
         String timestamp = dateFormat(new Date());
         Commit curCommit = getHEAD();
 
-        TreeMap<String, String> nameToBlobMap = curCommit.getNameToBlob();// get old commit's map
+        TreeMap<String, String> nameToBlobMap = curCommit.getNameToBlob(); // get old commit's map
 
         // remove mapping in the removal stage
         if (removalStage != null) {
@@ -176,8 +177,8 @@ public class Repository {
 
         // add mapping in the addition stage
         if (addtionStage != null) {
-            TreeMap<String,String> addition = addtionStage.getFileToBlobMap();
-            for(String i : addition.keySet()) {
+            TreeMap<String, String> addition = addtionStage.getFileToBlobMap();
+            for (String i : addition.keySet()) {
                 nameToBlobMap.put(i, addition.get(i));
             }
         }
@@ -219,8 +220,8 @@ public class Repository {
             flag = 1;
             return;
         }
-
-        if (commit.containsFile(fileName)) { // if file is tracked by current commit, then add it to rmStage & delete it
+        // if file is tracked by current commit, then add it to rmStage & delete it
+        if (commit.containsFile(fileName)) {
             String hashId = commit.getValueInMap(fileName);
             StagingArea rmStage = getStageFromFile("rm");
             if (rmStage == null) {
@@ -233,8 +234,7 @@ public class Repository {
             if (fileCWD.exists()) {
                 Utils.restrictedDelete(fileCWD);
             }
-        }
-        else if (flag == 0){
+        } else if (flag == 0) {
             System.out.println("No reason to remove the file.");
         }
     }
@@ -259,7 +259,7 @@ public class Repository {
      */
     public static void globalLog() {
         List<String> allCommit = Utils.plainFilenamesIn(COMMIT_DIR);
-        for(String i: allCommit) {
+        for (String i: allCommit) {
             getCommitByHashId(i).printCommit();
         }
     }
@@ -271,9 +271,9 @@ public class Repository {
     public static void find(String msg) {
         List<String> allCommit = Utils.plainFilenamesIn(COMMIT_DIR);
         int findAtleast1 = 0;
-        for(String i: allCommit) {
+        for (String i: allCommit) {
             Commit curCommit = getCommitByHashId(i);
-            if(curCommit.getMessage().contains(msg)) {
+            if (curCommit.getMessage().contains(msg)) {
                 System.out.println(curCommit.getHashId());
                 findAtleast1++;
             }
@@ -297,7 +297,8 @@ public class Repository {
     /**
      * The command: checkout
      * Usage: checkout -- [file name]
-     * Takes the version of the file as it exists in the head commit and puts it in the working directory,
+     * Takes the version of the file as it exists in the head commit
+     * and puts it in the working directory,
      * overwriting the version of the file that’s already there if there is one.
      * The new version of the file is not staged.
      * @param fileName
@@ -344,9 +345,9 @@ public class Repository {
      * @param first delete the files in "first"
      * @param second create the files in "second"
      * @param branchName in this branch set the HEAD pointer
-     * @throws IOException
      */
-    private static void switchCwd1To2(Commit first, Commit second, String branchName) throws IOException {
+    private static void switchCwd1To2(Commit first, Commit second, String branchName)
+            throws IOException {
         checkStatus();
         checkUntracked(second, restFiles);
         checkUntracked(second, stagedFilesAdd);
@@ -368,12 +369,14 @@ public class Repository {
         if (!untracked.isEmpty()) {
             for (String i : untracked) {
                 if (checkout.containsKey(i)) {
-                    System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                    message("There is an untracked file in the way;" +
+                            " delete it, or add and commit it first.");
                     System.exit(0);
                 }
             }
         }
     }
+
     /**
      * The command: status
      */
@@ -476,9 +479,11 @@ public class Repository {
                 String newHashId = blob.getHashId();
                 String oldHashId = treeMap.get(i);
 
-                if (newHashId.equals(oldHashId)) { // not modified the added file in CWD
+                if (newHashId.equals(oldHashId)) {
+                    // not modified the added file in CWD
                     if (addOrCommit.equals("add")) {
-                        stagedFilesAdd.add(i); // in addStaging not modified
+                        stagedFilesAdd.add(i);
+                        // in addStaging not modified
                     }
                 } else { // the file is modified
                     if (modified == null || !modified.contains(i)) {
@@ -487,7 +492,8 @@ public class Repository {
                 }
             } else { // the file not exists in CWD
                 if (!stagedFilesRm.contains(i)) {
-                    deleted.add(i); // Determine if it is in rmStage; if so, do not add it to the deleted list
+                    deleted.add(i);
+                    // Determine if it is in rmStage; if so, do not add it to the deleted list
                 }
             }
             restFiles.remove(i); // Only leave the untracked files
@@ -534,35 +540,12 @@ public class Repository {
      * Merge every files exits in 3 commits: HEAD, Other Branch's Active Head, Split Point
      */
     public static void merge(String givenBranch) throws IOException {
-        File pointer = new File(BRANCH_DIR, givenBranch);
-        if (!pointer.exists()) {
-            System.out.println("A branch with that name does not exist.");
-            System.exit(0);
-        }
+        checkWarning(givenBranch);
 
-        String curBranch = getCurBranchName();
         boolean conflictFlag = false;
-        if (curBranch.equals(givenBranch)) {
-            System.out.println("Cannot merge a branch with itself.");
-            System.exit(0);
-        }
-
-        checkStatus();
-        if (!stagedFilesAdd.isEmpty() || !stagedFilesRm.isEmpty()) {
-            System.out.println("You have uncommitted changes.");
-            System.exit(0);
-        }
-
-        if (!restFiles.isEmpty()) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            System.exit(0);
-        }
-
         Commit splitPoint = getSplitPoint(givenBranch);
         Commit branchHead = getBranchByName(givenBranch);
-
         TreeMap<String, String> allFiles = new TreeMap<>();
-
         TreeMap<String, String> splitMap = splitPoint.getNameToBlob();
         TreeMap<String, String> otherBranchMap = branchHead.getNameToBlob();
         TreeMap<String, String> headMap = getHEAD().getNameToBlob();
@@ -584,7 +567,6 @@ public class Repository {
         allFiles.putAll(splitMap);
         allFiles.putAll(otherBranchMap);
         allFiles.putAll(headMap);
-
         TreeMap<String, String> newMap = new TreeMap<>();
 
         for (String fileName : allFiles.keySet()) {
@@ -596,21 +578,22 @@ public class Repository {
             boolean modifiedHead = isModified(fileName, splitMap, headMap);
 
             if (inSplit) {
-                if (inHead && inOther && !modifiedHead && modifiedOther) { // split: A; HEAD:A; other:!A -- !A
+                if (inHead && inOther && !modifiedHead && modifiedOther) {
+                    // split: A; HEAD:A; other:!A -- !A
                     newMap.put(fileName, otherBranchMap.get(fileName));
-//                    addInMerge(headMap.get(fileName));
                     continue;
-                } else if (inHead && inOther && modifiedHead && !modifiedOther) { // split: B; HEAD:!B; other:B -- !B
+                } else if (inHead && inOther && modifiedHead && !modifiedOther) {
+                    // split: B; HEAD:!B; other:B -- !B
                     newMap.put(fileName, headMap.get(fileName));
                     continue;
-                } else if (inHead && !inOther && !modifiedHead) { // split: D; HEAD:D; other:X -- X
+                } else if (inHead && !inOther && !modifiedHead) {
+                    // split: D; HEAD:D; other:X -- X
                     rm(fileName);
                     continue;
                 }
             } else {
                 if (!inHead && inOther) { // split: X; HEAD:X; other:F -- F
                     newMap.put(fileName, otherBranchMap.get(fileName));
-//                    addInMerge(otherBranchMap.get(fileName));
                     continue;
                 } else if (inHead && !inOther) {
                     newMap.put(fileName, headMap.get(fileName));
@@ -624,7 +607,9 @@ public class Repository {
                 String blobId = makeConflictFile(fileName, headMap, otherBranchMap);
                 newMap.put(fileName, blobId);
                 conflictFlag = true;
-            } else if (modifiedHead && modifiedOther && !isModified(fileName, headMap, otherBranchMap)) { // modified in same way
+            } else if (modifiedHead && modifiedOther
+                    && !isModified(fileName, headMap, otherBranchMap)) {
+                // modified in same way
                 newMap.put(fileName, headMap.get(fileName));
             }
         }
@@ -640,11 +625,39 @@ public class Repository {
         }
     }
 
+    private static void checkWarning(String givenBranch) {
+        File pointer = new File(BRANCH_DIR, givenBranch);
+        if (!pointer.exists()) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        String curBranch = getCurBranchName();
+
+        if (curBranch.equals(givenBranch)) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
+
+        checkStatus();
+        if (!stagedFilesAdd.isEmpty() || !stagedFilesRm.isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+
+        if (!restFiles.isEmpty()) {
+            System.out.println("There is an untracked file in the way;" +
+                    " delete it, or add and commit it first.");
+            System.exit(0);
+        }
+    }
+
     /**
      * Check the blob if is different from the split point
      * @return Is modified: ture; Not modified: false
      */
-    public static boolean isModified(String fileName, TreeMap<String, String> split, TreeMap<String, String> curMap) {
+    public static boolean isModified(String fileName, TreeMap<String, String> split
+            , TreeMap<String, String> curMap) {
         String blobIdInSplit = split.get(fileName);
         String blobIdInCurMap = curMap.get(fileName);
         if (blobIdInCurMap == null || blobIdInSplit == null) {
@@ -675,7 +688,7 @@ public class Repository {
         blob.saveBlob();
     }
 
-    public static Commit commitInMerge(String branchName,  TreeMap<String, String> map) throws IOException {
+    public static Commit commitInMerge(String branchName,  TreeMap<String, String> map) {
         String timestamp = dateFormat(new Date());
 
 
@@ -684,7 +697,7 @@ public class Repository {
         parentList.add(getHEAD().getHashId());
         parentList.add(getBranchByName(branchName).getHashId());
 
-        String msg = "Merged " + branchName + " into " + getCurBranchName();
+        String msg = "Merged " + branchName + " into " + getCurBranchName() + ".";
         // hash everything except the hashId itself
         String hashId = Utils.sha1(msg, timestamp, map.toString(), parentList.toString());
         Commit commit = new Commit(msg, hashId, timestamp, parentList, map);
@@ -702,7 +715,8 @@ public class Repository {
      * @param givenMap Given branch map
      * @return the new file's blob hashID
      */
-    public static String makeConflictFile(String filename, TreeMap<String, String> curMap, TreeMap<String, String> givenMap) throws IOException {
+    public static String makeConflictFile(String filename, TreeMap<String
+            , String> curMap, TreeMap<String, String> givenMap) throws IOException {
         File newFile = new File(filename);
 
         if (!newFile.exists()) {
@@ -710,11 +724,14 @@ public class Repository {
         }
 
         if (!curMap.containsKey(filename)) {
-            writeContents(newFile, "<<<<<<< HEAD\n", "=======\n", getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
+            writeContents(newFile, "<<<<<<< HEAD\n", "=======\n"
+                    , getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
         } else if (!givenMap.containsKey(filename)) {
-            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename)), "=======\n",  ">>>>>>>\n");
+            writeContents(newFile, "<<<<<<< HEAD\n"
+                    , getBlobContent(curMap.get(filename)), "=======\n",  ">>>>>>>\n");
         } else {
-            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename)), "=======\n",  getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
+            writeContents(newFile, "<<<<<<< HEAD\n", getBlobContent(curMap.get(filename))
+                    , "=======\n",  getBlobContent(givenMap.get(filename)), ">>>>>>>\n");
         }
 
         Blob newBlob = new Blob(newFile);

@@ -3,14 +3,13 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.TreeMap;
 
 import static gitlet.Repository.*;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet blob object.
  *
- *  @author
+ *  @author qqqsw
  */
 
 public class Blob implements Serializable {
