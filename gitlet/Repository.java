@@ -135,7 +135,7 @@ public class Repository {
         StagingArea oldSa = getStageFromFile("add");
         checkInCommit(blob);
 
-        if (oldSa == null) { //todo optimize the way store stagingArea
+        if (oldSa == null) {
             StagingArea stagingArea = new StagingArea(blob);
             writeObject(ADD, stagingArea);
         } else {
@@ -357,7 +357,6 @@ public class Repository {
         createAllFilesFrom(second);
 
         setHEAD(second, branchName);
-        clearStatusList();
     }
 
     /**
@@ -384,15 +383,6 @@ public class Repository {
     public static void status() {
         checkStatus();
         printStatus();
-        clearStatusList();
-    }
-
-    public static void clearStatusList() {
-        stagedFilesAdd.clear();
-        stagedFilesRm.clear();
-        modified.clear();
-        deleted.clear();
-        restFiles.clear();
     }
 
     /**
@@ -662,7 +652,6 @@ public class Repository {
                     + " delete it, or add and commit it first.");
             System.exit(0);
         }
-        clearStatusList();
     }
 
     /**
@@ -716,6 +705,7 @@ public class Repository {
         Commit commit = new Commit(msg, hashId, timestamp, parentList, map);
 
         // update HEAD & curBranch's active pointer
+
 
         commit.saveCommit();
         return commit;
